@@ -1,15 +1,18 @@
 import pygame
 from constants import *
+from Board import *
+from Logic import *
 
 
 class Game:
     def __init__(self, win):
         self.win = win
+        self.board = Board(Logic(), BOARDSIZE)
 
     def run(self):
+
         game_on = True
         clock = pygame.time.Clock()
-
         while game_on:
             clock.tick(60)
             self.win.fill(BG_COLOR)
@@ -25,6 +28,4 @@ class Game:
         pygame.quit()
 
     def draw_everything(self):
-        pygame.draw.circle(self.win, WHITE, (MIDW - 40, MIDH - 20), 5)
-        pygame.draw.circle(self.win, WHITE, (MIDW + 40, MIDH - 20), 5)
-        pygame.draw.line(self.win, WHITE, (MIDW - 40, MIDH + 20), (MIDW + 40, MIDH + 20))
+        self.board.draw(self.win, MIDW - BOARDSIZE // 2, MIDH - BOARDSIZE // 2)
