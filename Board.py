@@ -24,8 +24,9 @@ class Board:
                 else:
                     color = CASECOLOR2
 
-                pygame.draw.rect(win, color, (
-                    x + self.case_size * i, y + self.case_size * j, self.case_size, self.case_size))
+                pygame.draw.rect(win, color,
+                                 (x + self.case_size * i, y + self.case_size * j, self.case_size, self.case_size))
 
     def draw_pieces(self, win):
         pass
+
