@@ -14,14 +14,14 @@ class Game:
         game_on = True
         clock = pygame.time.Clock()
         while game_on:
-            clock.tick(60)
+            clock.tick(15)
             self.win.fill(BG_COLOR)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:  # si on appuie sur la croix
                     game_on = False
 
-                # on gère tous les évènements ici
+                # on gère tous les évènements ici (clics de la souris)
 
             self.draw_everything()
             pygame.display.flip()  # update l'affichage
