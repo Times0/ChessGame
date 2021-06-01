@@ -22,3 +22,4 @@ class Logic:
                 j += 1
             if i == 7 and j == 8:  # to finish
                 break
+
