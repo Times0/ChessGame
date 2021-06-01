@@ -8,6 +8,7 @@ class Game:
     def __init__(self, win):
         self.win = win
         self.board = Board(Logic(), BOARDSIZE)
+        self.board.logic.load_fen("rnbqknbr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
     def run(self):
 
