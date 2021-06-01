@@ -18,18 +18,16 @@ MIDH = HEIGHT // 2
 BOARDSIZE = HEIGHT * 0.8
 
 # Pieces
-wp_image = pygame.image.load(r"assets/row-1-col-6.png")
-wr_image = pygame.image.load(r"assets/row-1-col-5.png")
-wn_image = pygame.image.load(r"assets/row-1-col-4.png")
-wb_image = pygame.image.load(r"assets/row-1-col-3.png")
-wq_image = pygame.image.load(r"assets/row-1-col-2.png")
-wk_image = pygame.image.load(r"assets/row-1-col-1.png")
+P_image = pygame.image.load(r"assets/row-1-col-6.png")
+R_image = pygame.image.load(r"assets/row-1-col-5.png")
+N_image = pygame.image.load(r"assets/row-1-col-4.png")
+B_image = pygame.image.load(r"assets/row-1-col-3.png")
+Q_image = pygame.image.load(r"assets/row-1-col-2.png")
+K_image = pygame.image.load(r"assets/row-1-col-1.png")
 
-bp_image = pygame.image.load(r"assets/row-2-col-6.png")
-br_image = pygame.image.load(r"assets/row-2-col-5.png")
-bn_image = pygame.image.load(r"assets/row-2-col-4.png")
-bb_image = pygame.image.load(r"assets/row-2-col-3.png")
-bq_image = pygame.image.load(r"assets/row-2-col-2.png")
-bk_image = pygame.image.load(r"assets/row-2-col-1.png")
-
-
+p_image = pygame.image.load(r"assets/row-2-col-6.png")
+r_image = pygame.image.load(r"assets/row-2-col-5.png")
+n_image = pygame.image.load(r"assets/row-2-col-4.png")
+b_image = pygame.image.load(r"assets/row-2-col-3.png")
+q_image = pygame.image.load(r"assets/row-2-col-2.png")
+k_image = pygame.image.load(r"assets/row-2-col-1.png")
