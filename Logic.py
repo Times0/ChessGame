@@ -5,6 +5,7 @@ import numpy as np
 
 class Logic:
     def __init__(self):
+
         self.board = [["br", "bn", "bb", "bq", "bk", 'bb', 'bn', 'br'],
                       ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
                       [" ", " ", " ", " ", " ", " ", " ", " "],
