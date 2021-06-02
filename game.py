@@ -30,3 +30,5 @@ class Game:
 
     def draw_everything(self):
         self.board.draw(self.win, MIDW - BOARDSIZE // 2, MIDH - BOARDSIZE // 2)
+
+    Print("Hello Dorian")
