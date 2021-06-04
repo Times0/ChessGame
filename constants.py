@@ -16,6 +16,7 @@ WIDTH, HEIGHT = GetSystemMetrics(0), GetSystemMetrics(1)
 MIDW = WIDTH // 2
 MIDH = HEIGHT // 2
 BOARDSIZE = HEIGHT * 0.8
+BOARDTOPLEFTPOS = (MIDW - BOARDSIZE // 2, MIDH - BOARDSIZE // 2)
 
 # Pieces
 P_image = pygame.image.load(r"assets/row-1-col-6.png")

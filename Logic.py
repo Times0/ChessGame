@@ -1,12 +1,9 @@
-import numpy as np
-
-
 # toute la partie back, juste la logique
 
 class Logic:
-    def __init__(self):
-
-        self.board = [["" for i in range(8)] for i in range(8)]
+    def __init__(self, fen):
+        self.board = [["" for _ in range(8)] for _ in range(8)]
+        self.load_fen(fen)
         self.turn = 0
 
     def load_fen(self, fen):
@@ -22,4 +19,3 @@ class Logic:
                 j += 1
             if i == 7 and j == 8:  # to finish
                 break
-
