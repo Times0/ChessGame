@@ -6,7 +6,7 @@ class Board:
     def __init__(self, logic, size):
         self.size = size
         self.case_size = int(self.size // 8)
-
+        self.test = "test"
         self.x = 0
         self.y = 0
 
