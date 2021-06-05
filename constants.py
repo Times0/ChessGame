@@ -32,3 +32,6 @@ n_image = pygame.image.load(r"assets/row-2-col-4.png")
 b_image = pygame.image.load(r"assets/row-2-col-3.png")
 q_image = pygame.image.load(r"assets/row-2-col-2.png")
 k_image = pygame.image.load(r"assets/row-2-col-1.png")
+
+# other
+STARTINGPOSFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

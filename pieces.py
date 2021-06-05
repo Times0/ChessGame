@@ -10,7 +10,11 @@ def piece_from_abreviation(abreviation):
     return dico[abreviation.lower()](color)
 
 
-class Pawn:
+class Piece:
+    pass
+
+
+class Pawn(Piece):
     def __init__(self, color):
         self.color = color
         self.abreviation = "p"
@@ -22,7 +26,7 @@ class Pawn:
         pass
 
 
-class Rook:
+class Rook(Piece):
     def __init__(self, color):
         self.color = color
         self.abreviation = "r"
@@ -34,7 +38,7 @@ class Rook:
         pass
 
 
-class Bishop:
+class Bishop(Piece):
     def __init__(self, color):
         self.color = color
         self.abreviation = "b"
@@ -46,7 +50,7 @@ class Bishop:
         pass
 
 
-class Knight:
+class Knight(Piece):
     def __init__(self, color):
         self.color = color
         self.abreviation = "n"
@@ -58,7 +62,7 @@ class Knight:
         pass
 
 
-class Queen:
+class Queen(Piece):
     def __init__(self, color):
         self.color = color
         self.abreviation = "q"
@@ -70,7 +74,7 @@ class Queen:
         pass
 
 
-class King:
+class King(Piece):
     def __init__(self, color):
         self.color = color
         self.abreviation = "k"
@@ -82,4 +86,14 @@ class King:
         pass
 
 
-dico = {"p": Pawn, "r": Rook, "b": Bishop, "n": Knight, "q": Queen, "k": King}
+class NonePiece(Piece):
+    def __init__(self, color=None):
+        self.color = color
+        self.abreviation = " "
+        self.image = None
+
+    def possible_moves(self):
+        return None
+
+
+dico = {"p": Pawn, "r": Rook, "b": Bishop, "n": Knight, "q": Queen, "k": King, " ": NonePiece}

@@ -42,14 +42,16 @@ class Board:
         i = (y - BOARDTOPLEFTPOS[1]) // self.case_size
         return int(i), int(j)
 
-    def piece_at_coord(self, i, j):
+    def piece_at_coord(self, i, j) -> Piece:
         return self.board[i][j]
 
     def isNotempty(self, i, j):
-        return self.board[i][j] != ""
+        return type(self.board[i][j]) != NonePiece
 
     def update(self, board):
         self.board = board
+
+    # affichage
 
     def draw(self, win, x, y):
         """Draws everything"""
@@ -79,7 +81,7 @@ class Board:
                     win.blit(image,
                              (self.movingpiece_pos[0] - self.case_size // 2,
                               self.movingpiece_pos[1] - self.case_size // 2))
-                elif board[i][j] is not None:
+                elif type(board[i][j]) != NonePiece:
                     image = board[i][j].image
                     image = pygame.transform.smoothscale(image, (self.case_size, self.case_size))
                     win.blit(image, (self.x + self.case_size * j, self.y + self.case_size * i))

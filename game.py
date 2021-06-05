@@ -26,13 +26,15 @@ class Game:
 
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and \
                         isInrectangle(event.pos, BOARDTOPLEFTPOS, BOARDSIZE, BOARDSIZE) and \
-                        self.board.isNotempty(*self.board.coord_from_pos(*event.pos)):
-
+                        self.board.isNotempty(*self.board.coord_from_pos(*event.pos)):  # si on clique sur une piece
                     self.board.set_to_gone(*event.pos)
                     self.board.state = "dragging"
+
                 elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.board.state == "dragging":
                     self.board.set_to_not_gone()
                     self.board.state = "idle"
+                    # if self.logic.isMovelegal():
+                    #    self.logic.move()
 
                 elif self.board.state == "dragging" and event.type == pygame.MOUSEMOTION:
                     self.board.movingpiece_pos = event.pos
