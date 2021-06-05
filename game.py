@@ -17,7 +17,7 @@ class Game:
         game_on = True
         clock = pygame.time.Clock()
         while game_on:
-            clock.tick(45)
+            clock.tick(60)
             self.win.fill(BG_COLOR)
 
             for event in pygame.event.get():

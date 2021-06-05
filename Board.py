@@ -1,5 +1,6 @@
 from constants import *
 import pygame
+from pieces import *
 
 
 class Board:
@@ -8,7 +9,7 @@ class Board:
         self.case_size = int(self.size // 8)
         self.x = 0  # coordonnées en pixel par rapport à la fenetre
         self.y = 0
-        self.board = list()  # board shown on screen which can have "gone" for somme coords
+        self.board = None  # board shown on screen which can have "gone" for somme coords
         boardstates = ["idle", "dragging"]
         self.state = "idle"
 
@@ -69,17 +70,24 @@ class Board:
                                  (x + self.case_size * i, y + self.case_size * j, self.case_size, self.case_size))
 
     def draw_pieces(self, win):
-
         board = self.board
         for i in range(8):
             for j in range(8):
                 if board[i][j] == "gone":
-                    image = globals()[f"{self.movingpiece}_image"]
+                    image = self.movingpiece.image
                     image = pygame.transform.smoothscale(image, (self.case_size, self.case_size))
                     win.blit(image,
                              (self.movingpiece_pos[0] - self.case_size // 2,
                               self.movingpiece_pos[1] - self.case_size // 2))
-                elif board[i][j].strip() != "":
-                    image = globals()[f"{board[i][j]}_image"]
+                elif board[i][j] is not None:
+                    image = board[i][j].image
                     image = pygame.transform.smoothscale(image, (self.case_size, self.case_size))
                     win.blit(image, (self.x + self.case_size * j, self.y + self.case_size * i))
+
+    def __repr__(self):  # useless
+        returnboard = [[None for _ in range(8)] for _ in range(8)]
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j] is not None:
+                    returnboard[i][j] = self.board[i][j].abreviation
+        return str(returnboard)

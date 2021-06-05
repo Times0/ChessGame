@@ -1,8 +1,10 @@
 # toute la partie back, juste la logique
+from pieces import *
+
 
 class Logic:
     def __init__(self, fen):
-        self.board = [["" for _ in range(8)] for _ in range(8)]
+        self.board = [[None for _ in range(8)] for _ in range(8)]
         self.load_fen(fen)
         self.turn = 0
 
@@ -15,7 +17,7 @@ class Logic:
             elif char.isnumeric():
                 j += int(char) - 1
             elif char.isalpha():
-                self.board[i][j] = char
+                self.board[i][j] = piece_from_abreviation(char)
                 j += 1
             if i == 7 and j == 8:  # to finish
                 break
