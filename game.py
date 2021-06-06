@@ -12,6 +12,7 @@ class Game:
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic.board)
 
+
     def run(self):
 
         game_on = True
@@ -45,3 +46,5 @@ class Game:
 
     def draw_everything(self):
         self.board.draw(self.win, *BOARDTOPLEFTPOS)
+
+  

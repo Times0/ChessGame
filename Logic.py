@@ -9,6 +9,7 @@ class Logic:
         self.load_fen(fen)
         self.turn = "white"
 
+
     def load_fen(self, fen):
         i, j = 0, 0
         for char in fen:
@@ -18,10 +19,13 @@ class Logic:
             elif char.isnumeric():
                 j += int(char) - 1
             elif char.isalpha():
+
                 self.board[i][j] = piece_from_abreviation(char)
+
                 j += 1
             if i == 7 and j == 8:  # to finish
                 break
+
 
     def isMovelegal(self, i, j, destination_i, destination_j) -> bool:
         piece = self.board[i][j]
