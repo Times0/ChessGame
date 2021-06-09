@@ -46,7 +46,7 @@ class Board:
         return self.board[i][j]
 
     def isNotempty(self, i, j):
-        return type(self.board[i][j]) != NonePiece
+        return (self.board[i][j]) is not None
 
     def update(self, board):
         self.board = board
@@ -81,7 +81,7 @@ class Board:
                     win.blit(image,
                              (self.movingpiece_pos[0] - self.case_size // 2,
                               self.movingpiece_pos[1] - self.case_size // 2))
-                elif type(board[i][j]) != NonePiece:
+                elif (board[i][j]) is not None:
                     image = board[i][j].image
                     image = pygame.transform.smoothscale(image, (self.case_size, self.case_size))
                     win.blit(image, (self.x + self.case_size * j, self.y + self.case_size * i))

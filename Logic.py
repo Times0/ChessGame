@@ -18,9 +18,7 @@ class Logic:
             elif char.isnumeric():
                 j += int(char) - 1
             elif char.isalpha():
-
                 self.board[i][j] = piece_from_abreviation(char, i, j)
-
                 j += 1
             if i == 7 and j == 8:  # to finish
                 break

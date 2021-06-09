@@ -1,5 +1,4 @@
 from constants import *
-from Logic import Logic
 
 
 def piece_from_abreviation(abreviation, i, j):
@@ -19,6 +18,14 @@ class Piece:
         self.j = j
         self.abreviation = None
 
+    def set_abreviation(self, name):
+        inv_map = {v: k for k, v in dico.items()}
+        print(inv_map)
+        abreviation = inv_map[name]
+        if self.color == "white":
+            abreviation = abreviation.upper()
+        self.abreviation = abreviation
+
     def possible_moves(self):
         """ Retourne les moves qui seraient possibles s'il n'y avait aucune piece sur l'echequier"""
 
@@ -29,7 +36,8 @@ class Piece:
 class Pawn(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
-        self.abreviation = "p"
+        self.set_abreviation(self.__class__)
+
         self.image = globals()[f"{self.abreviation}_image"]
         self.direction = -1 if self.color == 'white' else +1
 
@@ -38,7 +46,7 @@ class Pawn(Piece):
         j = self.j
         move_list = [(i, j + self.direction)]
 
-    def legal_moves(self, board: Logic):
+    def legal_moves(self, board):
         piece_at = board.piece_at
         i, j = self.i, self.j
         dir = self.direction
@@ -63,65 +71,65 @@ class Pawn(Piece):
 class Bishop(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
-        self.abreviation = "b"
+        self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board: Logic):
+    def legal_moves(self, board):
         piece_at = board.piece_at
 
 
 class Rook(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
-        self.abreviation = "r"
+        self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board: Logic):
+    def legal_moves(self, board):
         piece_at = board.piece_at
 
 
 class Knight(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
-        self.abreviation = "n"
+        self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board: Logic):
+    def legal_moves(self, board):
         piece_at = board.piece_at
 
 
 class Queen(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
-        self.abreviation = "q"
+        self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board: Logic):
+    def legal_moves(self, board):
         piece_at = board.piece_at
 
 
 class King(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
-        self.abreviation = "k"
+        self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board: Logic):
+    def legal_moves(self, board):
         piece_at = board.piece_at
 
 
