@@ -43,8 +43,8 @@ class Game:
                     self.board.set_to_not_gone()
                     self.board.state = "idle"
 
-                    # if self.logic.isMovelegal():
-                    #    self.logic.move()
+                    # if self.logic.isMovelegal(.....):
+                    #    self.logic.move(......)
                     #    self.board.update(self.logic.board)
 
                 elif self.board.state == "dragging" and event.type == pygame.MOUSEMOTION:

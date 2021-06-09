@@ -7,11 +7,17 @@ class Logic:
     def __init__(self, fen):
         self.board = [[None for _ in range(8)] for _ in range(8)]
         self.load_fen(fen)
-        self.turn = "white"
+
+        # variables pour les privilèges de roquer
+        self.q, self.Q, self.k, self.K = 1, 1, 1, 1
 
     def load_fen(self, fen):
+        remaining = None
         i, j = 0, 0
-        for char in fen:
+        for k, char in enumerate(fen):
+            if char == " ":
+                remaining = fen[k + 1:]
+                break
             if char == "/":
                 i += 1
                 j = 0
