@@ -21,7 +21,6 @@ BOARDTOPLEFTPOS = (MIDW - BOARDSIZE // 2, MIDH - BOARDSIZE // 2)
 # Pieces
 
 P_image = pygame.image.load(r"assets/row-1-col-6.png")  # white
-
 R_image = pygame.image.load(r"assets/row-1-col-5.png")
 N_image = pygame.image.load(r"assets/row-1-col-4.png")
 B_image = pygame.image.load(r"assets/row-1-col-3.png")

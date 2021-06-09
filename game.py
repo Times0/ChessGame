@@ -12,7 +12,6 @@ class Game:
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic.board)
 
-
     def run(self):
 
         game_on = True
@@ -36,6 +35,7 @@ class Game:
                     self.board.state = "idle"
                     # if self.logic.isMovelegal():
                     #    self.logic.move()
+                    #    self.board.update(self.logic.board)
 
                 elif self.board.state == "dragging" and event.type == pygame.MOUSEMOTION:
                     self.board.movingpiece_pos = event.pos
@@ -46,5 +46,3 @@ class Game:
 
     def draw_everything(self):
         self.board.draw(self.win, *BOARDTOPLEFTPOS)
-
-  
