@@ -12,7 +12,7 @@ def piece_from_abreviation(abreviation, i, j):
 
 class Piece:
     def __init__(self, color, i, j):
-        self.has_moved = False
+        self.never_moved = True
         self.color = color
         self.i = i
         self.j = j
@@ -20,7 +20,6 @@ class Piece:
 
     def set_abreviation(self, name):
         inv_map = {v: k for k, v in dico.items()}
-        print(inv_map)
         abreviation = inv_map[name]
         if self.color == "white":
             abreviation = abreviation.upper()
@@ -50,22 +49,24 @@ class Pawn(Piece):
         piece_at = board.piece_at
         i, j = self.i, self.j
         dir = self.direction
-        retunrlist = []
+        returnlist = []
 
         # move devant
-        if (piece_at(i + dir, j)) is None:
-            retunrlist.append((i + dir, j))
-            if i == 1 and self.color == "black" or i == 6 and self.color == "white":
-                if piece_at(i + 2 * dir, j) is None:
-                    retunrlist.append((i + 2 * dir, j))
+        i1 = i + dir  # case devant le pion (relativement)
+        if not piece_at(i1, j):
+            returnlist.append((i1, j))
+            if self.never_moved:
+                i2 = i1 + dir  # deux cases devant le pion
+                if not piece_at(i2, j):
+                    returnlist.append((i2, j))
 
-        # captures sur les cotés
-        if piece_at(i + dir, j + 1).color != self.color:
-            retunrlist.append((i + dir, j + 1))
-        if piece_at(i + dir, j - 1).color != self.color:
-            retunrlist.append((i + dir, j - 1))
+        # captures
 
-        return retunrlist
+        for j in range(j - 1, j + 1):
+            if piece_at(i1, j) and piece_at(i1, j).color != self.color:
+                returnlist.append((i1, j))
+
+        return returnlist
 
 
 class Bishop(Piece):

@@ -1,3 +1,5 @@
+import time
+
 import pygame
 from constants import *
 from Board import *
@@ -10,7 +12,7 @@ class Game:
         self.win = win
         self.logic = Logic(fen)
         self.board = Board(BOARDSIZE)
-        self.board.update(self.logic.board)
+        self.board.update(self.logic)
 
     def run(self):
 
@@ -30,15 +32,23 @@ class Game:
                     self.board.set_to_gone(*event.pos)
                     self.board.state = "dragging"
 
+                    i, j = self.board.coord_from_pos(*event.pos)
+
+                    print(i, j)
+
+                    moves = self.logic.board[i][j].legal_moves(self.logic)
+                    self.board.legal_moves_to_output = moves
+
                 elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.board.state == "dragging":
                     self.board.set_to_not_gone()
                     self.board.state = "idle"
+
                     # if self.logic.isMovelegal():
                     #    self.logic.move()
                     #    self.board.update(self.logic.board)
 
                 elif self.board.state == "dragging" and event.type == pygame.MOUSEMOTION:
-                    self.board.movingpiece_pos = event.pos
+                    self.board.dragged_piece_pos = event.pos
 
             self.draw_everything()
             pygame.display.flip()  # update l'affichage
