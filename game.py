@@ -34,18 +34,20 @@ class Game:
 
                     i, j = self.board.coord_from_pos(*event.pos)
 
-                    print(i, j)
-
                     moves = self.logic.board[i][j].legal_moves(self.logic)
                     self.board.legal_moves_to_output = moves
 
                 elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.board.state == "dragging":
-                    self.board.set_to_not_gone()
-                    self.board.state = "idle"
+                    move = self.board.coord_from_pos(*event.pos)
+                    if move in self.board.legal_moves_to_output:
+                        self.logic.move(*self.board.dragged_piece_coord, *move)
+                        self.board.set_to_not_gone()
+                        self.board.update(self.logic)
+                        self.board.legal_moves_to_output = []
 
-                    # if self.logic.isMovelegal(.....):
-                    #    self.logic.move(......)
-                    #    self.board.update(self.logic.board)
+                    else:
+                        self.board.set_to_not_gone()
+                    self.board.state = "idle"
 
                 elif self.board.state == "dragging" and event.type == pygame.MOUSEMOTION:
                     self.board.dragged_piece_pos = event.pos

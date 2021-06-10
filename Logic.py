@@ -8,10 +8,12 @@ class Logic:
         self.board = [[None for _ in range(8)] for _ in range(8)]
         self.load_fen(fen)
 
+        self.turn = "white"
         # variables pour les privilèges de roquer
         self.q, self.Q, self.k, self.K = 1, 1, 1, 1
 
     def load_fen(self, fen):
+        new_board = [[None for _ in range(8)] for _ in range(8)]
         remaining = None
         i, j = 0, 0
         for k, char in enumerate(fen):
@@ -22,12 +24,13 @@ class Logic:
                 i += 1
                 j = 0
             elif char.isnumeric():
-                j += int(char) - 1
+                j += int(char)
             elif char.isalpha():
-                self.board[i][j] = piece_from_abreviation(char, i, j)
+                new_board[i][j] = piece_from_abreviation(char, i, j)
                 j += 1
             if i == 7 and j == 8:  # to finish
                 break
+        self.board = new_board.copy()
 
     def piece_at(self, i, j):
         return self.board[i][j]
@@ -52,8 +55,11 @@ class Logic:
         piece = self.board[i][j]
         if piece is None:
             raise Exception
+
         self.board[i][j] = None
         self.board[dest_i][dest_j] = piece
+        self.board[dest_i][dest_j].moved(dest_i, dest_j)
+        self.switch_turn()
 
     def switch_turn(self) -> None:
         if self.turn == "white":

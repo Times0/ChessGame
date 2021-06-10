@@ -1,4 +1,7 @@
+from itertools import product
+
 from constants import *
+from fonctions import *
 
 
 def piece_from_abreviation(abreviation, i, j):
@@ -25,11 +28,18 @@ class Piece:
             abreviation = abreviation.upper()
         self.abreviation = abreviation
 
-    def possible_moves(self):
-        """ Retourne les moves qui seraient possibles s'il n'y avait aucune piece sur l'echequier"""
+    def _legal_moves(self, board):
+        pass
 
     def legal_moves(self, board):
         """Retourne tous les moves légaux dans une position pour une piece"""
+        if self.color != board.turn:
+            return []
+        return self._legal_moves(board)
+
+    def moved(self, dest_i, dest_j):
+        self.i, self.j = dest_i, dest_j
+        self.never_moved = False
 
 
 class Pawn(Piece):
@@ -40,12 +50,7 @@ class Pawn(Piece):
         self.image = globals()[f"{self.abreviation}_image"]
         self.direction = -1 if self.color == 'white' else +1
 
-    def possible_moves(self):
-        i = self.i
-        j = self.j
-        move_list = [(i, j + self.direction)]
-
-    def legal_moves(self, board):
+    def _legal_moves(self, board):
         piece_at = board.piece_at
         i, j = self.i, self.j
         dir = self.direction
@@ -53,7 +58,7 @@ class Pawn(Piece):
 
         # move devant
         i1 = i + dir  # case devant le pion (relativement)
-        if not piece_at(i1, j):
+        if isInbounds(i1, j) and not piece_at(i1, j):
             returnlist.append((i1, j))
             if self.never_moved:
                 i2 = i1 + dir  # deux cases devant le pion
@@ -61,11 +66,9 @@ class Pawn(Piece):
                     returnlist.append((i2, j))
 
         # captures
-
-        for j in range(j - 1, j + 1):
-            if piece_at(i1, j) and piece_at(i1, j).color != self.color:
+        for j in [j - 1, j + 1]:
+            if isInbounds(i1, j) and piece_at(i1, j) and piece_at(i1, j).color != self.color:
                 returnlist.append((i1, j))
-
         return returnlist
 
 
@@ -78,7 +81,7 @@ class Bishop(Piece):
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board):
+    def _legal_moves(self, board):
         piece_at = board.piece_at
 
 
@@ -91,7 +94,7 @@ class Rook(Piece):
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board):
+    def _legal_moves(self, board):
         piece_at = board.piece_at
 
 
@@ -101,11 +104,10 @@ class Knight(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def possible_moves(self):
-        pass
-
-    def legal_moves(self, board):
-        piece_at = board.piece_at
+    def _legal_moves(self, board):
+        i, j = self.i, self.j
+        moves = list(product([i - 1, i + 1], [j - 2, j + 2])) + list(product([i - 2, i + 2], [j - 1, j + 1]))
+        return [move for move in moves if isInbounds(*move)]
 
 
 class Queen(Piece):
@@ -117,7 +119,7 @@ class Queen(Piece):
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board):
+    def _legal_moves(self, board):
         piece_at = board.piece_at
 
 
@@ -130,7 +132,7 @@ class King(Piece):
     def possible_moves(self):
         pass
 
-    def legal_moves(self, board):
+    def _legal_moves(self, board):
         piece_at = board.piece_at
 
 
