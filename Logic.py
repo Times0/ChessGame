@@ -5,27 +5,35 @@ import numpy as np
 
 class Logic:
     def __init__(self, fen):
-        self.board = [[NonePiece() for _ in range(8)] for _ in range(8)]
+        self.board = [[None for _ in range(8)] for _ in range(8)]
         self.load_fen(fen)
-        self.turn = "white"
 
+        self.turn = "white"
+        # variables pour les privilèges de roquer
+        self.q, self.Q, self.k, self.K = 1, 1, 1, 1
 
     def load_fen(self, fen):
+        new_board = [[None for _ in range(8)] for _ in range(8)]
+        remaining = None
         i, j = 0, 0
-        for char in fen:
+        for k, char in enumerate(fen):
+            if char == " ":
+                remaining = fen[k + 1:]
+                break
             if char == "/":
                 i += 1
                 j = 0
             elif char.isnumeric():
-                j += int(char) - 1
+                j += int(char)
             elif char.isalpha():
-
-                self.board[i][j] = piece_from_abreviation(char)
-
+                new_board[i][j] = piece_from_abreviation(char, i, j)
                 j += 1
             if i == 7 and j == 8:  # to finish
                 break
+        self.board = new_board.copy()
 
+    def piece_at(self, i, j):
+        return self.board[i][j]
 
     def isMovelegal(self, i, j, destination_i, destination_j) -> bool:
         piece = self.board[i][j]
@@ -45,21 +53,27 @@ class Logic:
         :return: None
         """
         piece = self.board[i][j]
-        if type(piece) == NonePiece:
+        if piece is None:
             raise Exception
-        self.board[i][j] = NonePiece()
+
+        self.board[i][j] = None
         self.board[dest_i][dest_j] = piece
+        self.board[dest_i][dest_j].moved(dest_i, dest_j)
+        self.switch_turn()
+
+    def switch_turn(self) -> None:
+        if self.turn == "white":
+            self.turn = "black"
+        else:
+            self.turn = "white"
 
     def __repr__(self):
         returnboard = [[" " for _ in range(8)] for _ in range(8)]
         for i in range(8):
             for j in range(8):
-                returnboard[i][j] = self.board[i][j].abreviation
+                if self.board[i][j] is None:
+                    returnboard[i][j] = " "
+                else:
+                    returnboard[i][j] = self.board[i][j].abreviation
 
         return str(np.matrix(returnboard))
-
-
-a = Logic(STARTINGPOSFEN)
-print(a)
-a.move(6, 4, 4, 4)
-print(a)

@@ -9,27 +9,30 @@ class Board:
         self.case_size = int(self.size // 8)
         self.x = 0  # coordonnées en pixel par rapport à la fenetre
         self.y = 0
-        self.board = None  # board shown on screen which can have "gone" for somme coords
+        self.board_to_output = [[None for _ in range(8)] for _ in
+                                range(8)]  # board shown on screen which can have "gone" for somme coords
         boardstates = ["idle", "dragging"]
         self.state = "idle"
 
-        self.movingpiece = None
-        self.movingpiece_coord = None  # i,j
-        self.movingpiece_pos = None
+        self.dragged_piece = None
+        self.dragged_piece_coord = None  # i,j
+        self.dragged_piece_pos = None
+
+        self.legal_moves_to_output = []
 
     def set_to_gone(self, x, y):
         i, j = self.coord_from_pos(x, y)
-        self.movingpiece = self.piece_at_coord(i, j)
-        self.board[i][j] = "gone"
-        self.movingpiece_pos = x, y
-        self.movingpiece_coord = i, j
+        self.dragged_piece = self.piece_at_coord(i, j)
+        self.board_to_output[i][j] = "gone"
+        self.dragged_piece_pos = x, y
+        self.dragged_piece_coord = i, j
 
     def set_to_not_gone(self):
-        i, j = self.movingpiece_coord
-        self.board[i][j] = self.movingpiece
-        self.movingpiece = None
-        self.movingpiece_coord = None
-        self.movingpiece_pos = None
+        i, j = self.dragged_piece_coord
+        self.board_to_output[i][j] = self.dragged_piece
+        self.dragged_piece = None
+        self.dragged_piece_coord = None
+        self.dragged_piece_pos = None
 
     def coord_from_pos(self, x, y) -> tuple[int, int]:
         """
@@ -42,14 +45,19 @@ class Board:
         i = (y - BOARDTOPLEFTPOS[1]) // self.case_size
         return int(i), int(j)
 
-    def piece_at_coord(self, i, j) -> Piece:
-        return self.board[i][j]
+    def pos_from_coord(self, i, j):
+        return self.x + j * self.case_size, self.y + i * self.case_size
+
+    def piece_at_coord(self, i, j) -> Piece or None:
+        return self.board_to_output[i][j]
 
     def isNotempty(self, i, j):
-        return type(self.board[i][j]) != NonePiece
+        return (self.board_to_output[i][j]) is not None
 
-    def update(self, board):
-        self.board = board
+    def update(self, logic):
+        for i in range(8):
+            for j in range(8):
+                self.board_to_output[i][j] = logic.board[i][j]
 
     # affichage
 
@@ -57,6 +65,7 @@ class Board:
         """Draws everything"""
         self.draw_board(win, x, y)
         self.draw_pieces(win)
+        self.draw_dots(win)
 
     def draw_board(self, win, x, y):
         self.x = x
@@ -72,24 +81,39 @@ class Board:
                                  (x + self.case_size * i, y + self.case_size * j, self.case_size, self.case_size))
 
     def draw_pieces(self, win):
-        board = self.board
+        board = self.board_to_output
         for i in range(8):
             for j in range(8):
                 if board[i][j] == "gone":
-                    image = self.movingpiece.image
+                    image = self.dragged_piece.image
                     image = pygame.transform.smoothscale(image, (self.case_size, self.case_size))
                     win.blit(image,
-                             (self.movingpiece_pos[0] - self.case_size // 2,
-                              self.movingpiece_pos[1] - self.case_size // 2))
-                elif type(board[i][j]) != NonePiece:
+                             (self.dragged_piece_pos[0] - self.case_size // 2,
+                              self.dragged_piece_pos[1] - self.case_size // 2))
+                elif (board[i][j]) is not None:
                     image = board[i][j].image
                     image = pygame.transform.smoothscale(image, (self.case_size, self.case_size))
                     win.blit(image, (self.x + self.case_size * j, self.y + self.case_size * i))
+
+    def draw_dots(self, win):
+        for legal_move in self.legal_moves_to_output:
+            i, j = legal_move[0], legal_move[1]
+
+            if not self.piece_at_coord(i, j):
+                pygame.draw.rect(win, GREEN, (
+                    self.pos_from_coord(i, j)[0] + self.case_size // 2,
+                    self.pos_from_coord(i, j)[1] + self.case_size // 2,
+                    10, 10))
+            else:
+                pygame.draw.rect(win, RED, (
+                    self.pos_from_coord(i, j)[0] + self.case_size // 2,
+                    self.pos_from_coord(i, j)[1] + self.case_size // 2,
+                    10, 10))
 
     def __repr__(self):  # useless
         returnboard = [[None for _ in range(8)] for _ in range(8)]
         for i in range(8):
             for j in range(8):
-                if self.board[i][j] is not None:
-                    returnboard[i][j] = self.board[i][j].abreviation
+                if self.board_to_output[i][j] is not None:
+                    returnboard[i][j] = self.board_to_output[i][j].abreviation
         return str(returnboard)

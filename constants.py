@@ -6,6 +6,8 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 LIGHTBEIGE = (181, 136, 99)
 BROWN = (240, 217, 181)
+GREEN = 63, 123, 82
+RED = 253, 189, 89
 
 BG_COLOR = BLACK
 CASECOLOR1 = BROWN
@@ -21,7 +23,6 @@ BOARDTOPLEFTPOS = (MIDW - BOARDSIZE // 2, MIDH - BOARDSIZE // 2)
 # Pieces
 
 P_image = pygame.image.load(r"assets/row-1-col-6.png")  # white
-
 R_image = pygame.image.load(r"assets/row-1-col-5.png")
 N_image = pygame.image.load(r"assets/row-1-col-4.png")
 B_image = pygame.image.load(r"assets/row-1-col-3.png")
@@ -37,3 +38,4 @@ k_image = pygame.image.load(r"assets/row-2-col-1.png")
 
 # other
 STARTINGPOSFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+fen1 = "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
