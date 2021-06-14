@@ -78,26 +78,23 @@ class Bishop(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def possible_moves(self):
-        i, j = self.i, self.j
-        return [ [i+n,j+n] for n in range(-8,8+1) ] + [[i-n,j+n] for n in range(-8,8+1) ]
-        # ceci sont des mouvement en diagonale, (diagonale gauche, puis droite)
-
     def _legal_moves(self, board):
         piece_at = board.piece_at
         returnlist = []
         i, j = self.i, self.j
-        for a,b in [[1,1],[-1,1],[1,-1],[-1,-1]] :# toutes les permutations de S2 , (ici écrire une liste avec for était bien plus long)
-            for n in range (1,8+1):           # on ne teste pas la case sur laquelle il y a déjà notre pièce
-                i1 , j1 = i+a*n , j+b*n
+        for a, b in [[1, 1], [-1, 1], [1, -1],
+                     [-1, -1]]:  # toutes les permutations de S2 , (ici écrire une liste avec for était bien plus long)
+            for n in range(1, 8 + 1):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
+                i1, j1 = i + a * n, j + b * n
 
-                if isInbounds(i1, j1) :
-                    if ( not piece_at(i1, j1) ) or piece_at(i1, j).color != self.color:
+                if isInbounds(i1, j1):
+                    if (not piece_at(i1, j1)) or piece_at(i1, j1).color != self.color:
                         # déplacement autorisé  ou capture
-                        returnlist.append(i1, j1)
-                    if piece_at(i1, j):
-                        break         # c'est cette ligne qui traduit la rupture de la 'ligne' si une pièce y est présente
+                        returnlist.append((i1, j1))
+                    if piece_at(i1, j1):
+                        break  # c'est cette ligne qui traduit la rupture de la 'ligne' si une pièce y est présente
         return returnlist
+
 
 class Rook(Piece):
     def __init__(self, color, i, j):
@@ -105,23 +102,21 @@ class Rook(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def possible_moves(self):
-        i, j = self.i, self.j
-        return [[i, j + n] for n in range(-8, 8 + 1)] + [[i + n, j] for n in range(-8, 8 + 1)]
-
     def _legal_moves(self, board):
         piece_at = board.piece_at
         returnlist = []
         i, j = self.i, self.j
-        for a, b in [[1, 0], [-1, 0], [0, -1],[0, 1]]:
+        for a, b in [[1, 0], [-1, 0], [0, -1], [0, 1]]:
             for n in range(1, 8 + 1):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
                 i1, j1 = i + a * n, j + b * n
                 if isInbounds(i1, j1):
-                    if (not piece_at(i1, j1)) or piece_at(i1, j).color != self.color:   # déplacement autorisé  ou capture
-                        returnlist.append(i1, j1)
+                    if (not piece_at(i1, j1)) or piece_at(i1,
+                                                          j).color != self.color:  # déplacement autorisé  ou capture
+                        returnlist.append((i1, j1))
                     if piece_at(i1, j):
                         break  # rupture de la 'ligne' si une pièce y est présente
         return returnlist
+
 
 class Knight(Piece):
     def __init__(self, color, i, j):
@@ -141,19 +136,17 @@ class Queen(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def possible_moves(self):
-        return Bishop.possible_moves(self) + Rook.possible_moves(self) # j'avais la flemme de reécrire
-
     def _legal_moves(self, board):
         piece_at = board.piece_at
         returnlist = []
         i, j = self.i, self.j
-        for a, b in [[1, 0], [-1, 0], [0, -1],[0, 1],[1,1],[-1,1],[1,-1],[-1,-1]]:
+        for a, b in [[1, 0], [-1, 0], [0, -1], [0, 1], [1, 1], [-1, 1], [1, -1], [-1, -1]]:
             for n in range(1, 8 + 1):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
                 i1, j1 = i + a * n, j + b * n
                 if isInbounds(i1, j1):
-                    if (not piece_at(i1, j1)) or piece_at(i1, j).color != self.color:   # déplacement autorisé  ou capture
-                        returnlist.append(i1, j1)
+                    if (not piece_at(i1, j1)) or piece_at(i1,
+                                                          j1).color != self.color:  # déplacement autorisé  ou capture
+                        returnlist.append((i1, j1))
                     if piece_at(i1, j):
                         break  # rupture de la 'ligne' si une pièce y est présente
         return returnlist
@@ -164,9 +157,6 @@ class King(Piece):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
-
-    def possible_moves(self):
-        pass
 
     def _legal_moves(self, board):
         piece_at = board.piece_at
