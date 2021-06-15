@@ -14,11 +14,14 @@ class Board:
         boardstates = ["idle", "dragging"]
         self.state = "idle"
 
+        self.clicked_piece_coord = None
         self.dragged_piece = None
         self.dragged_piece_coord = None  # i,j
         self.dragged_piece_pos = None
 
         self.legal_moves_to_output = []
+
+        self.attacked_cases = []
 
     def set_to_gone(self, x, y):
         i, j = self.coord_from_pos(x, y)
@@ -26,6 +29,7 @@ class Board:
         self.board_to_output[i][j] = "gone"
         self.dragged_piece_pos = x, y
         self.dragged_piece_coord = i, j
+        self.clicked_piece_coord = i, j
 
     def set_to_not_gone(self):
         i, j = self.dragged_piece_coord
@@ -64,6 +68,7 @@ class Board:
     def draw(self, win, x, y):
         """Draws everything"""
         self.draw_board(win, x, y)
+        self.draw_attacked_cases(win)
         self.draw_pieces(win)
         self.draw_dots(win)
 
@@ -99,16 +104,20 @@ class Board:
         for legal_move in self.legal_moves_to_output:
             i, j = legal_move[0], legal_move[1]
 
-            if not self.piece_at_coord(i, j):
-                pygame.draw.rect(win, GREEN, (
-                    self.pos_from_coord(i, j)[0] + self.case_size // 2,
-                    self.pos_from_coord(i, j)[1] + self.case_size // 2,
-                    10, 10))
-            else:
-                pygame.draw.rect(win, RED, (
-                    self.pos_from_coord(i, j)[0] + self.case_size // 2,
-                    self.pos_from_coord(i, j)[1] + self.case_size // 2,
-                    10, 10))
+            color = GREEN if not self.piece_at_coord(i, j) else ORANGE
+
+            pygame.draw.rect(win, color, (
+                self.pos_from_coord(i, j)[0] + self.case_size // 2 - 5,
+                self.pos_from_coord(i, j)[1] + self.case_size // 2 - 5,
+                10, 10))
+
+    def draw_attacked_cases(self, win):
+        for case in self.attacked_cases:
+            i, j = case[0], case[1]
+            pygame.draw.rect(win, RED, (
+                self.pos_from_coord(i, j)[0],
+                self.pos_from_coord(i, j)[1],
+                self.case_size, self.case_size))
 
     def __repr__(self):  # useless
         returnboard = [[None for _ in range(8)] for _ in range(8)]

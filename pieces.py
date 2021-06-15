@@ -28,14 +28,19 @@ class Piece:
             abreviation = abreviation.upper()
         self.abreviation = abreviation
 
-    def _legal_moves(self, board):
+    def almost_legal_moves(self, board):
+        """Cette fonction est overriden pour chacune des pièces, elle renvoie les moves possible pour une pièce
+        en prenant en compte les autres pièces de l'échequier mais sans prendre en compte les échecs au roi"""
         pass
 
     def legal_moves(self, board):
         """Retourne tous les moves légaux dans une position pour une piece"""
         if self.color != board.turn:
             return []
-        return self._legal_moves(board)
+        return self.almost_legal_moves(board)
+
+    def attacking_squares(self, board):
+        return self.almost_legal_moves(board)
 
     def moved(self, dest_i, dest_j):
         self.i, self.j = dest_i, dest_j
@@ -50,7 +55,7 @@ class Pawn(Piece):
         self.image = globals()[f"{self.abreviation}_image"]
         self.direction = -1 if self.color == 'white' else +1
 
-    def _legal_moves(self, board):
+    def almost_legal_moves(self, board):
         piece_at = board.piece_at
         i, j = self.i, self.j
         dir = self.direction
@@ -71,6 +76,18 @@ class Pawn(Piece):
                 returnlist.append((i1, j))
         return returnlist
 
+    def attacking_squares(self, board):
+        piece_at = board.piece_at
+        i, j = self.i, self.j
+        dir = self.direction
+        i1 = i + dir
+        returnlist = []
+        # attacked squares
+        for j in [j - 1, j + 1]:
+            if isInbounds(i1, j) and (not piece_at(i1, j) or piece_at(i1, j).color != self.color):
+                returnlist.append((i1, j))
+        return returnlist
+
 
 class Bishop(Piece):
     def __init__(self, color, i, j):
@@ -78,7 +95,7 @@ class Bishop(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def _legal_moves(self, board):
+    def almost_legal_moves(self, board):
         piece_at = board.piece_at
         returnlist = []
         i, j = self.i, self.j
@@ -102,7 +119,7 @@ class Rook(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def _legal_moves(self, board):
+    def almost_legal_moves(self, board):
         piece_at = board.piece_at
         returnlist = []
         i, j = self.i, self.j
@@ -111,9 +128,9 @@ class Rook(Piece):
                 i1, j1 = i + a * n, j + b * n
                 if isInbounds(i1, j1):
                     if (not piece_at(i1, j1)) or piece_at(i1,
-                                                          j).color != self.color:  # déplacement autorisé  ou capture
+                                                          j1).color != self.color:  # déplacement autorisé  ou capture
                         returnlist.append((i1, j1))
-                    if piece_at(i1, j):
+                    if piece_at(i1, j1):
                         break  # rupture de la 'ligne' si une pièce y est présente
         return returnlist
 
@@ -124,10 +141,12 @@ class Knight(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def _legal_moves(self, board):
+    def almost_legal_moves(self, board):
+        piece_at = board.piece_at
         i, j = self.i, self.j
         moves = list(product([i - 1, i + 1], [j - 2, j + 2])) + list(product([i - 2, i + 2], [j - 1, j + 1]))
-        return [move for move in moves if isInbounds(*move)]
+        return [move for move in moves if
+                isInbounds(*move) and (not piece_at(*move) or piece_at(*move).color != self.color)]
 
 
 class Queen(Piece):
@@ -136,7 +155,7 @@ class Queen(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def _legal_moves(self, board):
+    def almost_legal_moves(self, board):
         piece_at = board.piece_at
         returnlist = []
         i, j = self.i, self.j
@@ -147,7 +166,7 @@ class Queen(Piece):
                     if (not piece_at(i1, j1)) or piece_at(i1,
                                                           j1).color != self.color:  # déplacement autorisé  ou capture
                         returnlist.append((i1, j1))
-                    if piece_at(i1, j):
+                    if piece_at(i1, j1):
                         break  # rupture de la 'ligne' si une pièce y est présente
         return returnlist
 
@@ -158,8 +177,17 @@ class King(Piece):
         self.set_abreviation(self.__class__)
         self.image = globals()[f"{self.abreviation}_image"]
 
-    def _legal_moves(self, board):
+    def almost_legal_moves(self, board):
         piece_at = board.piece_at
+        returnlist = []
+
+        i, j = self.i, self.j
+        for a, b in [[-1, -1], [-1, 1], [-1, 0], [1, -1], [1, 1], [1, 0], [0, 1], [0, -1]]:
+            i1, j1 = i + a, j + b
+            if isInbounds(i1, j1) and (not piece_at(i1, j1) or piece_at(i1, j1).color != self.color):
+                returnlist.append((i1, j1))
+        return returnlist
 
 
 dico = {"p": Pawn, "r": Rook, "b": Bishop, "n": Knight, "q": Queen, "k": King}
+a = list(product([-1, 1], [-1, 1])) + list(product([1, 0], [-1, 1]))

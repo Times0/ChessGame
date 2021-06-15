@@ -2,12 +2,13 @@ from win32api import GetSystemMetrics
 import pygame
 
 # Colors
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-LIGHTBEIGE = (181, 136, 99)
-BROWN = (240, 217, 181)
+BLACK = 0, 0, 0
+WHITE = 255, 255, 255
+LIGHTBEIGE = 181, 136, 99
+BROWN = 240, 217, 181
 GREEN = 63, 123, 82
-RED = 253, 189, 89
+ORANGE = 253, 189, 89
+RED = (250, 41, 76)
 
 BG_COLOR = BLACK
 CASECOLOR1 = BROWN

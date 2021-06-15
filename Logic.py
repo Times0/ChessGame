@@ -35,16 +35,17 @@ class Logic:
     def piece_at(self, i, j):
         return self.board[i][j]
 
-    def isMovelegal(self, i, j, destination_i, destination_j) -> bool:
-        piece = self.board[i][j]
-        if piece is None or piece.color != self.turn:
-            return False
+    def cases_attacked_by(self, color):
+        L = []
+        for i in range(8):
+            for j in range(8):
+                piece = self.board[i][j]
+                if piece and piece.color == color:
+                    L.extend(piece.attacking_squares(self))
+        return list(set(L))
 
-        possible_moves = piece.possible_moves(i, j)
-        legal_moves = list()
-        if (destination_i, destination_j) in legal_moves:
-            self.move(i, j, destination_i, destination_j)
-            return 1
+    def isIncheck(self, color):
+        pass
 
     def move(self, i: int, j: int, dest_i, dest_j) -> None:
         """
@@ -54,6 +55,7 @@ class Logic:
         """
         piece = self.board[i][j]
         if piece is None:
+            print('no piece here')
             raise Exception
 
         self.board[i][j] = None
@@ -77,3 +79,4 @@ class Logic:
                     returnboard[i][j] = self.board[i][j].abreviation
 
         return str(np.matrix(returnboard))
+
