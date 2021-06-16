@@ -1,10 +1,8 @@
-import time
-
-import pygame
-from constants import *
+import Button
 from Board import *
 from Logic import *
 from fonctions import *
+import pygame
 
 
 class Game:
@@ -13,6 +11,8 @@ class Game:
         self.logic = Logic(fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
+
+        self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 20, 20, pygame.quit, "X")]
 
     def run(self):
 
@@ -68,9 +68,21 @@ class Game:
                         self.board.set_to_not_gone()
                     self.board.state = "idle"
 
-                # si on bouge la souris
+                # si on bouge la souris avec une pièce en main
                 elif self.board.state == "dragging" and event.type == pygame.MOUSEMOTION:
                     self.board.dragged_piece_pos = event.pos
+
+                # buttons
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    for button in self.buttons:
+                        if button.isMouseon(event.pos):
+                            button.onclick()
+                if event.type == pygame.MOUSEMOTION:
+                    for button in self.buttons:
+                        if button.isMouseon(event.pos):
+                            button.hover()
+                        else:
+                            button.default()
 
             self.draw_everything()
             pygame.display.flip()  # update l'affichage
@@ -78,3 +90,6 @@ class Game:
 
     def draw_everything(self):
         self.board.draw(self.win, *BOARDTOPLEFTPOS)
+
+        for button in self.buttons:
+            button.draw(self.win)
