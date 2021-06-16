@@ -1,6 +1,5 @@
 from constants import *
 import pygame
-from pieces import *
 
 
 class Board:
@@ -52,7 +51,7 @@ class Board:
     def pos_from_coord(self, i, j):
         return self.x + j * self.case_size, self.y + i * self.case_size
 
-    def piece_at_coord(self, i, j) -> Piece or None:
+    def piece_at_coord(self, i, j):
         return self.board_to_output[i][j]
 
     def isNotempty(self, i, j):

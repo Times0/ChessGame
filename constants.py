@@ -41,3 +41,4 @@ k_image = pygame.image.load(r"assets/row-2-col-1.png")
 STARTINGPOSFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 fen1 = "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
 fencheck = "rnbqkbnr/pppppppp/5K2/8/8/8/PPPPPPPP/RNBQ1BNR w kq - 0 1"
+fenmate = "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1"

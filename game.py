@@ -38,7 +38,8 @@ class Game:
                         self.board.update(self.logic)
                         self.board.legal_moves_to_output = []
                         self.board.clicked_piece_coord = None
-                        self.board.legal_moves_to_output = []
+                        self.logic.game_state()
+                        print(self.logic.state)
 
                     # si on clique sur une pièce
                     elif self.board.isNotempty(*self.board.coord_from_pos(*event.pos)):
@@ -61,6 +62,8 @@ class Game:
                         self.board.set_to_not_gone()
                         self.board.update(self.logic)
                         self.board.legal_moves_to_output = []
+                        self.logic.game_state()
+                        print(self.logic.state)
                     else:
                         self.board.set_to_not_gone()
                     self.board.state = "idle"
