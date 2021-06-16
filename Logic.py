@@ -32,6 +32,30 @@ class Logic:
                 break
         self.board = new_board.copy()
 
+    def get_fen(self):
+        returnfen = ""
+        # liste des caractèrs représentant les pièces
+        i, j = 0, 0
+        while i < 8:
+            while j < 8:
+                print(i, j)
+                print(returnfen)
+                # si on a un espace
+                if not self.piece_at(i, j):
+                    c = 0
+                    while self.piece_at(i, j) is None and j < 7:
+                        c += 1
+                        j += 1
+                    returnfen += str(c)
+
+                else:
+                    returnfen += self.piece_at(i, j).abreviation
+                    j += 1
+            returnfen += "/"
+            i += 1
+            j = 0
+        # propriétés de l'échequier :
+
     def piece_at(self, i, j):
         return self.board[i][j]
 
@@ -44,8 +68,19 @@ class Logic:
                     L.extend(piece.attacking_squares(self))
         return list(set(L))
 
-    def isIncheck(self, color):
-        pass
+    def king_coord(self, color):
+        king_i, king_j = 0, 0
+        for i in range(8):
+            for j in range(8):
+                if self.piece_at(i, j) and self.board[i][j].abreviation == ("K" if color == "white" else "k"):
+                    king_i, king_j = i, j
+                    return king_i, king_j
+
+    def isKingincheck(self, color):
+        i, j = self.king_coord(color)
+        print(i, j)
+        print(self.cases_attacked_by(("white" if color == "black" else "black")))
+        return (i, j) in self.cases_attacked_by(("white" if color == "black" else "black"))
 
     def move(self, i: int, j: int, dest_i, dest_j) -> None:
         """
@@ -79,4 +114,3 @@ class Logic:
                     returnboard[i][j] = self.board[i][j].abreviation
 
         return str(np.matrix(returnboard))
-

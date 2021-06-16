@@ -1,5 +1,4 @@
 from itertools import product
-
 from constants import *
 from fonctions import *
 
@@ -35,8 +34,17 @@ class Piece:
 
     def legal_moves(self, board):
         """Retourne tous les moves légaux dans une position pour une piece"""
+        returnlist = []
         if self.color != board.turn:
             return []
+        # virtboard = Logic()
+        # for move in self.almost_legal_moves(board):
+        #    # on joue le move sur le virt board
+        #    virtboard.move(self.i, self.j, *move)
+        #    if not virtboard.isKingincheck(self.color):
+        #        returnlist.append(move)
+        #
+        # print(returnlist)
         return self.almost_legal_moves(board)
 
     def attacking_squares(self, board):
