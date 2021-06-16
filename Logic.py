@@ -43,7 +43,7 @@ class Logic:
                 # si on a un espace
                 if not self.piece_at(i, j):
                     c = 0
-                    while self.piece_at(i, j) is None and j < 7:
+                    while j < 8 and self.piece_at(i, j) is None :
                         c += 1
                         j += 1
                     returnfen += str(c)

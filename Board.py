@@ -68,7 +68,7 @@ class Board:
     def draw(self, win, x, y):
         """Draws everything"""
         self.draw_board(win, x, y)
-        self.draw_attacked_cases(win)
+        # self.draw_attacked_cases(win)
         self.draw_pieces(win)
         self.draw_dots(win)
 
