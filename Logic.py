@@ -39,7 +39,7 @@ class Logic:
             j = 0
 
         for i, part in enumerate(parts[1:]):
-            print(part, i)
+
             if i == 0:
                 self.turn = "white" if part == "w" else "black"
 
