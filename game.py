@@ -35,11 +35,10 @@ class Game:
                         move = self.board.coord_from_pos(*event.pos)
                         if move in self.board.legal_moves_to_output:
                             previous_coord = self.board.clicked_piece_coord
-                            self.logic.move(*previous_coord, *move)
+                            self.logic.real_move(*previous_coord, *move)
                             self.board.update(self.logic)
                             self.board.legal_moves_to_output = []
                             self.board.clicked_piece_coord = None
-                            self.logic.update_game_state(self.logic.turn)
                             if self.logic.state != "game_on":
                                 game_on = False  # on arrete la boucle du jeu
 
@@ -61,11 +60,10 @@ class Game:
                         previous_coord = self.board.dragged_piece_coord
                         # on effectue le move
                         if move in self.board.legal_moves_to_output:
-                            self.logic.move(*previous_coord, *move)
+                            self.logic.real_move(*previous_coord, *move)
                             self.board.set_to_not_gone()
                             self.board.update(self.logic)
                             self.board.legal_moves_to_output = []
-                            self.logic.update_game_state((self.logic.turn))
                             if self.logic.state != "game_on":
                                 game_on = False  # on arrete la boucle du jeu
 

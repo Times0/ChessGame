@@ -118,7 +118,6 @@ class Logic:
 
     def update_game_state(self, color):
         """ possible states : ["black wins","white wins","stalemate"]"""
-
         if self.isMate(color):
             self.state = other_color(color) + "wins"
         elif self.isStalemate(color):
@@ -139,6 +138,19 @@ class Logic:
         self.board[dest_i][dest_j] = piece
         self.board[dest_i][dest_j].moved(dest_i, dest_j)
         self.switch_turn()
+
+    def real_move(self, i: int, j: int, dest_i, dest_j) -> None:
+        piece = self.board[i][j]
+        if piece is None:
+            print('no piece here')
+            raise Exception
+
+        self.board[i][j] = None
+        self.board[dest_i][dest_j] = piece
+        self.board[dest_i][dest_j].moved(dest_i, dest_j)
+        self.switch_turn()
+        self.update_game_state(self.turn)
+        print(self.state)
 
     def switch_turn(self) -> None:
         if self.turn == "white":
@@ -357,3 +369,4 @@ def piece_from_abreviation(abreviation, i, j):
         color = "white"
 
     return dico[abreviation.lower()](color, i, j)
+print("hello")
