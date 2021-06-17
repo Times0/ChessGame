@@ -21,7 +21,6 @@ class Logic:
         board = []
         i, j = 0, 0
         parts = fen.split(" ")
-
         # part 1
         for row in parts[0].split("/"):
             b_row = []
@@ -44,7 +43,7 @@ class Logic:
                 self.turn = "white" if part == "w" else "black"
 
             elif i == 1:
-                self.castle_rights = part[2]
+                self.castle_rights = part
 
         self.board = board.copy()
 
@@ -103,23 +102,27 @@ class Logic:
                     king_i, king_j = i, j
                     return king_i, king_j
 
-    def isIncheck(self, color):
+    def isIncheck(self, color) -> bool:
         i, j = self.king_coord(color)
         return (i, j) in self.cases_attacked_by(("white" if color == "black" else "black"))
 
-    def isStalemate(self, color):
+    def isMate(self, color):
+        return self.isIncheck(color) and self.legal_moves(color) == []
+
+    def isStalemate(self, color) -> bool:
         return self.legal_moves(color) == []
 
     def king(self, color):
         i, j = self.king_coord(color)
         return self.board[i][j]
 
-    def update_game_state(self):
-        """ possible states : ["blackismated","whiteismated","draw"]"""
-        for color in ["white", "black"]:
-            reduced_l = list(itertools.chain(*self.legal_moves(color)))
-            if self.isIncheck(color) and reduced_l == []:
-                self.state = color + "ismated"
+    def update_game_state(self, color):
+        """ possible states : ["black wins","white wins","stalemate"]"""
+
+        if self.isMate(color):
+            self.state = other_color(color) + "wins"
+        elif self.isStalemate(color):
+            self.state = "stalemeate"
 
     def move(self, i: int, j: int, dest_i, dest_j) -> None:
         """
