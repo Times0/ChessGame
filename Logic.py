@@ -68,6 +68,9 @@ class Logic:
             i += 1
             j = 0
         # propriétés de l'échequier :
+
+        returnfen += f" {'w' if self.turn == 'white' else 'black'}"
+        returnfen += f" {self.castle_rights}"
         return returnfen
 
     def piece_at(self, i, j):
