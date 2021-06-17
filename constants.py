@@ -1,5 +1,10 @@
-from win32api import GetSystemMetrics
 import pygame
+from screeninfo import get_monitors
+
+main = get_monitors()[0]
+for m in get_monitors()[1:]:
+    if m.width > main.width:
+        main = m
 
 # Colors
 BLACK = 0, 0, 0
@@ -16,7 +21,7 @@ CASECOLOR1 = BROWN
 CASECOLOR2 = LIGHTBEIGE
 
 # Sizes
-WIDTH, HEIGHT = GetSystemMetrics(0), GetSystemMetrics(1)
+WIDTH, HEIGHT = main.width, main.height
 MIDW = WIDTH // 2
 MIDH = HEIGHT // 2
 BOARDSIZE = HEIGHT * 0.8
@@ -45,3 +50,4 @@ fencheck = "rnbqkbnr/pppppppp/5K2/8/8/8/PPPPPPPP/RNBQ1BNR w kq - 0 1"
 fenmate = "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 0 1"
 test = 'rn1qkb1r/pp2pppp/5n2/3p1b2/3P4/2N1P3/PP3PPP/R1BQKBNR w KQkq - 0 1 id "CCR01"; bm Qb3;'
 stalematefen = "2k5/8/8/8/8/8/3Q4/2K5 w - - 0 1"
+castlefen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"

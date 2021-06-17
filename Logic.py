@@ -139,16 +139,25 @@ class Logic:
         self.board[dest_i][dest_j].moved(dest_i, dest_j)
         self.switch_turn()
 
-    def real_move(self, i: int, j: int, dest_i, dest_j) -> None:
+    def real_move(self, i: int, j: int, dest_i, dest_j, switch_turn=True) -> None:
         piece = self.board[i][j]
         if piece is None:
             print('no piece here')
             raise Exception
 
+        if i == 0 and j == 4 and dest_i == 0 and dest_j == 2 and piece.never_moved:
+            self.real_move(0, 0, 0, 3, False)
+        elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6 and piece.never_moved:
+            self.real_move(0, 0, 0, 5, False)
+        elif i == 7 and j == 4 and dest_i == 7 and dest_j == 2 and piece.never_moved:
+            self.real_move(7, 0, 7, 3, False)
+        elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6 and piece.never_moved:
+            self.real_move(7, 7, 7, 5, False)
+
         self.board[i][j] = None
         self.board[dest_i][dest_j] = piece
         self.board[dest_i][dest_j].moved(dest_i, dest_j)
-        self.switch_turn()
+        if switch_turn: self.switch_turn()
         self.update_game_state(self.turn)
         print(self.state)
 
@@ -351,16 +360,40 @@ class King(Piece):
             if isInbounds(i1, j1) and (not piece_at(i1, j1) or piece_at(i1, j1).color != self.color):
                 returnlist.append((i1, j1))
 
-        # castle
-        if self.never_moved:               # rajouter la condition de la tour ici
-            i,j = self.i, self.j
-            bc = board.castle_rights
-            rights = (bc[0]+bc[1] if self.color=="black" else bc[2]+bc[3])
-            if "K" in rights.upper():    #rook kingside
-                attack = board.cases_attacked_by(self.color)
-                for e in [-1,1]:
-                    if [ [i,b+j] not in attack for b in [0, 1*e, 2*e]] == [True]*3:
-                        returnlist.append((i,j+2*e))
+        bc = board.castle_rights
+        rights_w = ""  # c'est de la merde
+        rights_b = ""  # c'est de la merde
+        for c in bc:
+            if c.upper() == c:
+                rights_w += c
+            elif c.lower() == c:
+                rights_b += c
+        rights = (rights_b if self.color == "black" else rights_w).upper()
+        attack = board.cases_attacked_by(self.color)
+        if self.never_moved:
+            for e in [n for n in [-1 * ("Q" in rights), 1 * ("K" in rights)] if n != 0]:  # queenside, kingside
+
+                if [([i, b + j] not in attack) and (not piece_at(i, b + j) or b == 0) for b in [0, 1 * e, 2 * e]] == [
+                    True] * 3:
+                    coord1, coord2 = (7 if e == 1 and self.color == "white" else 0), (
+                        0 if e == -1 and self.color == "black" else 7)
+                    # black : k [0,7] q [0,0]
+                    # white : K [7,7] Q [0,7]
+                    if piece_at(coord1,
+                                coord2) and piece_at(coord1, coord2).abreviation.upper() == "R" and piece_at(coord1,
+                                                                                                             coord2).never_moved:
+                        returnlist.append((i, j + 2 * e))
+        return returnlist
+
+    def attacking_squares(self, board):
+        piece_at = board.piece_at
+        returnlist = []
+
+        i, j = self.i, self.j
+        for a, b in [[-1, -1], [-1, 1], [-1, 0], [1, -1], [1, 1], [1, 0], [0, 1], [0, -1]]:
+            i1, j1 = i + a, j + b
+            if isInbounds(i1, j1) and (not piece_at(i1, j1) or piece_at(i1, j1).color != self.color):
+                returnlist.append((i1, j1))
         return returnlist
 
 
@@ -374,4 +407,3 @@ def piece_from_abreviation(abreviation, i, j):
         color = "white"
 
     return dico[abreviation.lower()](color, i, j)
-print("hello")
