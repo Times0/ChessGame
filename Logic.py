@@ -21,6 +21,7 @@ class Logic:
         board = []
         i, j = 0, 0
         parts = fen.split(" ")
+
         # part 1
         for row in parts[0].split("/"):
             b_row = []
@@ -36,16 +37,14 @@ class Logic:
             board.append(b_row)
             i += 1
             j = 0
-        # part 2 turn
-        self.turn = "white" if parts[1] == "w" else "black"
 
-        # part 3 castle
-        self.castle_rights = parts[2]
+        for i, part in enumerate(parts[1:]):
+            print(part, i)
+            if i == 0:
+                self.turn = "white" if part == "w" else "black"
 
-        # part 4 en passant
-        # c'est chaud
-
-        # part 5
+            elif i == 1:
+                self.castle_rights = part[2]
 
         self.board = board.copy()
 
