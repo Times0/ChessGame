@@ -12,7 +12,7 @@ class Game:
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
 
-        self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 20, 20, pygame.quit, "X")]
+        self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X")]
 
     def run(self):
 

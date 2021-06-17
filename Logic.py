@@ -19,24 +19,23 @@ class Logic:
         self.state = "game_on"
 
     def load_fen(self, fen):
-        new_board = [[None for _ in range(8)] for _ in range(8)]
-        remaining = None
+        board = []
         i, j = 0, 0
-        for k, char in enumerate(fen):
-            if char == " ":
-                remaining = fen[k + 1:]
-                break
-            if char == "/":
-                i += 1
-                j = 0
-            elif char.isnumeric():
-                j += int(char)
-            elif char.isalpha():
-                new_board[i][j] = piece_from_abreviation(char, i, j)
-                j += 1
-            if i == 7 and j == 8:  # to finish
-                break
-        self.board = new_board.copy()
+        for row in fen.split('/'):
+            b_row = []
+            for c in row:
+                if c == " ":
+                    break
+                elif c.isnumeric():
+                    b_row.extend([None] * int(c))
+                    j += int(c)
+                elif c.isalpha():
+                    b_row.append(piece_from_abreviation(c, i, j))
+                    j += 1
+            board.append(b_row)
+            i += 1
+            j = 0
+        self.board = board.copy()
 
     def get_fen(self):
         returnfen = ""
@@ -100,8 +99,8 @@ class Logic:
     def game_state(self):
         """ possible states : ["blackismated","whiteismated","draw"]"""
         for color in ["white", "black"]:
-            l = list(itertools.chain(*self.legal_moves(color)))
-            if self.isKingincheck(color) and l == []:
+            reduced_l = list(itertools.chain(*self.legal_moves(color)))
+            if self.isKingincheck(color) and reduced_l == []:
                 self.state = color + "ismated"
 
     def move(self, i: int, j: int, dest_i, dest_j) -> None:
