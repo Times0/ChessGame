@@ -352,10 +352,15 @@ class King(Piece):
                 returnlist.append((i1, j1))
 
         # castle
-        rights = [i for i in board.castle_rights if i.lower() == i]
-        if self.never_moved:
-            pass
-
+        if self.never_moved:               # rajouter la condition de la tour ici
+            i,j = self.i, self.j
+            bc = board.castle_rights
+            rights = (bc[0]+bc[1] if self.color=="black" else bc[2]+bc[3])
+            if "K" in rights.upper():    #rook kingside
+                attack = board.cases_attacked_by(self.color)
+                for e in [-1,1]:
+                    if [ [i,b+j] not in attack for b in [0, 1*e, 2*e]] == [True]*3:
+                        returnlist.append((i,j+2*e))
         return returnlist
 
 
