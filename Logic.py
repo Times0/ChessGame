@@ -335,6 +335,12 @@ class King(Piece):
             i1, j1 = i + a, j + b
             if isInbounds(i1, j1) and (not piece_at(i1, j1) or piece_at(i1, j1).color != self.color):
                 returnlist.append((i1, j1))
+
+        # castle
+        rights = [i for i in board.castle_rights if i.lower() == i]
+        if self.never_moved:
+            pass
+
         return returnlist
 
 
