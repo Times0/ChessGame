@@ -1,4 +1,3 @@
-# toute la partie back, juste la logique
 import itertools
 
 import numpy as np
@@ -14,14 +13,16 @@ class Logic:
 
         self.turn = "white"
         # variables pour les privilèges de roquer
-        self.q, self.Q, self.k, self.K = 1, 1, 1, 1
+        self.castle_rights = "kqKQ"  # kingside, queenside
         # ["game_on","blackismated", "whiteismated", "draw"]
         self.state = "game_on"
 
     def load_fen(self, fen):
         board = []
         i, j = 0, 0
-        for row in fen.split('/'):
+        parts = fen.split(" ")
+        # part 1
+        for row in parts[0].split("/"):
             b_row = []
             for c in row:
                 if c == " ":
@@ -35,6 +36,17 @@ class Logic:
             board.append(b_row)
             i += 1
             j = 0
+        # part 2 turn
+        self.turn = "white" if parts[1] == "w" else "black"
+
+        # part 3 castle
+        self.castle_rights = parts[2]
+
+        # part 4 en passant
+        # c'est chaud
+
+        # part 5
+
         self.board = board.copy()
 
     def get_fen(self):
@@ -77,7 +89,8 @@ class Logic:
             for j in range(8):
                 piece = self.piece_at(i, j)
                 if piece and piece.color == color:
-                    returnlist.append(piece.legal_moves(self))
+                    if piece.legal_moves(self):
+                        returnlist.append(piece.legal_moves(self))
         return returnlist
 
     def king_coord(self, color):
@@ -88,19 +101,22 @@ class Logic:
                     king_i, king_j = i, j
                     return king_i, king_j
 
-    def isKingincheck(self, color):
+    def isIncheck(self, color):
         i, j = self.king_coord(color)
         return (i, j) in self.cases_attacked_by(("white" if color == "black" else "black"))
+
+    def isStalemate(self, color):
+        return self.legal_moves(color) == []
 
     def king(self, color):
         i, j = self.king_coord(color)
         return self.board[i][j]
 
-    def game_state(self):
+    def update_game_state(self):
         """ possible states : ["blackismated","whiteismated","draw"]"""
         for color in ["white", "black"]:
             reduced_l = list(itertools.chain(*self.legal_moves(color)))
-            if self.isKingincheck(color) and reduced_l == []:
+            if self.isIncheck(color) and reduced_l == []:
                 self.state = color + "ismated"
 
     def move(self, i: int, j: int, dest_i, dest_j) -> None:
@@ -165,7 +181,7 @@ class Piece:
         for move in self.almost_legal_moves(board):
             virtual = Logic(board.get_fen())
             virtual.move(self.i, self.j, *move)
-            if not virtual.isKingincheck(self.color):
+            if not virtual.isIncheck(self.color):
                 returnlist.append(move)
 
         return returnlist
