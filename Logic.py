@@ -88,14 +88,14 @@ class Logic:
                     L.extend(piece.attacking_squares(self))
         return list(set(L))
 
-    def legal_moves(self, color: str) -> list:
+    def legal_moves(self, color: str) -> list[(int, int)]:
         returnlist = []
         for i in range(8):
             for j in range(8):
                 piece = self.piece_at(i, j)
                 if piece and piece.color == color:
                     if piece.legal_moves(self):
-                        returnlist.append(piece.legal_moves(self))
+                        returnlist.append([i, j, *piece.legal_moves(self)])
         return returnlist
 
     def king_coord(self, color: str) -> tuple:

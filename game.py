@@ -3,6 +3,7 @@ from Board import *
 from Logic import *
 from fonctions import *
 import pygame
+import bot
 
 
 class Game:
@@ -11,6 +12,7 @@ class Game:
         self.logic = Logic(fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
+        self.players = []
 
         self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X")]
 
