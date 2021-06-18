@@ -7,6 +7,9 @@ from itertools import product
 
 
 class Logic:
+    """ a Logic instance is an independant chess board that has every fonction needed to play the game like isMate(
+    color) or cases_attacked_by(color) and attributes such as turn, state, castle_rights etc"""
+
     def __init__(self, fen):
         self.board = [[None for _ in range(8)] for _ in range(8)]
         self.load_fen(fen)
@@ -14,10 +17,10 @@ class Logic:
         self.turn = "white"
         # variables pour les privilèges de roquer
         self.castle_rights = "kqKQ"  # kingside, queenside
-        # ["game_on","blackismated", "whiteismated", "draw"]
+        # ["game_on","blackwins", "whitewins", "stalemate"]
         self.state = "game_on"
 
-    def load_fen(self, fen):
+    def load_fen(self, fen) -> None:
         board = []
         i, j = 0, 0
         parts = fen.split(" ")
@@ -47,7 +50,8 @@ class Logic:
 
         self.board = board.copy()
 
-    def get_fen(self):
+    def get_fen(self) -> str:
+        """returns the fen of the current position"""
         returnfen = ""
         # liste des caractèrs représentant les pièces
         i, j = 0, 0
@@ -75,7 +79,7 @@ class Logic:
     def piece_at(self, i, j):
         return self.board[i][j]
 
-    def cases_attacked_by(self, color):
+    def cases_attacked_by(self, color: str) -> list:
         L = []
         for i in range(8):
             for j in range(8):
@@ -84,7 +88,7 @@ class Logic:
                     L.extend(piece.attacking_squares(self))
         return list(set(L))
 
-    def legal_moves(self, color):
+    def legal_moves(self, color: str) -> list:
         returnlist = []
         for i in range(8):
             for j in range(8):
@@ -94,7 +98,7 @@ class Logic:
                         returnlist.append(piece.legal_moves(self))
         return returnlist
 
-    def king_coord(self, color):
+    def king_coord(self, color: str) -> tuple:
         king_i, king_j = 0, 0
         for i in range(8):
             for j in range(8):
@@ -102,21 +106,21 @@ class Logic:
                     king_i, king_j = i, j
                     return king_i, king_j
 
-    def isIncheck(self, color) -> bool:
+    def isIncheck(self, color: str) -> bool:
         i, j = self.king_coord(color)
         return (i, j) in self.cases_attacked_by(("white" if color == "black" else "black"))
 
-    def isMate(self, color):
+    def isMate(self, color: str) -> bool:
         return self.isIncheck(color) and self.legal_moves(color) == []
 
-    def isStalemate(self, color) -> bool:
+    def isStalemate(self, color: str) -> bool:
         return self.legal_moves(color) == []
 
-    def king(self, color):
+    def king(self, color: str):
         i, j = self.king_coord(color)
         return self.board[i][j]
 
-    def update_game_state(self, color):
+    def update_game_state(self, color: str):
         """ possible states : ["black wins","white wins","stalemate"]"""
         if self.isMate(color):
             self.state = other_color(color) + "wins"
@@ -140,8 +144,9 @@ class Logic:
         self.switch_turn()
 
     def real_move(self, i: int, j: int, dest_i, dest_j, switch_turn=True) -> None:
+        """move method used when moving on the real board (not in virtual ones, probably a terrible idea btw)"""
         piece = self.board[i][j]
-        if piece is None:
+        if not piece:
             print('no piece here')
             raise Exception
 
@@ -157,9 +162,9 @@ class Logic:
         self.board[i][j] = None
         self.board[dest_i][dest_j] = piece
         self.board[dest_i][dest_j].moved(dest_i, dest_j)
-        if switch_turn: self.switch_turn()
+        if switch_turn:
+            self.switch_turn()
         self.update_game_state(self.turn)
-        print(self.state)
 
     def switch_turn(self) -> None:
         if self.turn == "white":
@@ -167,13 +172,11 @@ class Logic:
         else:
             self.turn = "white"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         returnboard = [[" " for _ in range(8)] for _ in range(8)]
         for i in range(8):
             for j in range(8):
-                if self.board[i][j] is None:
-                    returnboard[i][j] = " "
-                else:
+                if self.board[i][j]:
                     returnboard[i][j] = self.board[i][j].abreviation
 
         return str(np.matrix(returnboard))
@@ -187,20 +190,22 @@ class Piece:
         self.j = j
         self.abreviation = None
 
-    def set_abreviation(self, name):
+    def set_abreviation(self, name) -> None:
         inv_map = {v: k for k, v in dico.items()}
         abreviation = inv_map[name]
         if self.color == "white":
             abreviation = abreviation.upper()
         self.abreviation = abreviation
 
-    def almost_legal_moves(self, board):
+    def almost_legal_moves(self, board: Logic) -> list:
         """Cette fonction est overriden pour chacune des pièces, elle renvoie les moves possible pour une pièce
         en prenant en compte les autres pièces de l'échequier mais sans prendre en compte les échecs au roi"""
         pass
 
-    def legal_moves(self, board):
-        """Retourne tous les moves légaux dans une position pour une piece"""
+    def legal_moves(self, board: Logic) -> list:
+        """ Returns the list of every almost legal move this piece has which means it does not care about checks,
+        checks are handled in  legal_moves """
+
         returnlist = []
         if self.color != board.turn:
             return []
@@ -212,10 +217,13 @@ class Piece:
 
         return returnlist
 
-    def attacking_squares(self, board):
+    def attacking_squares(self, board) -> list:
+        """returns the list of every coordinates this piece is attacking/protecting, it is a bit different from
+        almos_legal moves since a protected piece is not attacked """
         return self.almost_legal_moves(board)
 
-    def moved(self, dest_i, dest_j):
+    def moved(self, dest_i, dest_j) -> None:
+        """Updates the info the piece has about itself"""
         self.i, self.j = dest_i, dest_j
         self.never_moved = False
 
@@ -228,7 +236,8 @@ class Pawn(Piece):
         self.image = globals()[f"{self.abreviation}_image"]
         self.direction = -1 if self.color == 'white' else +1
 
-    def almost_legal_moves(self, board):
+    def almost_legal_moves(self, board: Logic) -> list:
+
         piece_at = board.piece_at
         i, j = self.i, self.j
         dir = self.direction
@@ -249,7 +258,7 @@ class Pawn(Piece):
                 returnlist.append((i1, j))
         return returnlist
 
-    def attacking_squares(self, board):
+    def attacking_squares(self, board) -> list:
         piece_at = board.piece_at
         i, j = self.i, self.j
         dir = self.direction
@@ -379,9 +388,8 @@ class King(Piece):
                         0 if e == -1 and self.color == "black" else 7)
                     # black : k [0,7] q [0,0]
                     # white : K [7,7] Q [0,7]
-                    if piece_at(coord1,
-                                coord2) and piece_at(coord1, coord2).abreviation.upper() == "R" and piece_at(coord1,
-                                                                                                             coord2).never_moved:
+                    if piece_at(coord1, coord2) and piece_at(coord1, coord2).abreviation.upper() == "R" and piece_at(
+                            coord1, coord2).never_moved:
                         returnlist.append((i, j + 2 * e))
         return returnlist
 
