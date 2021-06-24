@@ -1,9 +1,10 @@
-import itertools
+from itertools import product
 
 import numpy as np
-from fonctions import *
+
+from fonctions import isInbounds, other_color
+
 from constants import *
-from itertools import product
 
 
 class Logic:
@@ -88,14 +89,17 @@ class Logic:
                     L.extend(piece.attacking_squares(self))
         return list(set(L))
 
-    def legal_moves(self, color: str) -> list[(int, int)]:
+    def legal_moves(self, color: str) -> list[(int, int, int, int)]:
+        """origin, destination"""
         returnlist = []
         for i in range(8):
             for j in range(8):
                 piece = self.piece_at(i, j)
                 if piece and piece.color == color:
-                    if piece.legal_moves(self):
-                        returnlist.append([i, j, *piece.legal_moves(self)])
+                    legals = piece.legal_moves(self)
+                    if legals:
+                        for legal in legals:
+                            returnlist.append((i, j, *legal))
         return returnlist
 
     def king_coord(self, color: str) -> tuple:
@@ -144,7 +148,8 @@ class Logic:
         self.switch_turn()
 
     def real_move(self, i: int, j: int, dest_i, dest_j, switch_turn=True) -> None:
-        """move method used when moving on the real board (not in virtual ones, probably a terrible idea btw)"""
+        """move method used when moving on the real board (not in virtual ones, probably a terrible idea btw) switch
+        turn is set to false when moving the rook during castling"""
         piece = self.board[i][j]
         if not piece:
             print('no piece here')
@@ -202,7 +207,7 @@ class Piece:
         en prenant en compte les autres pièces de l'échequier mais sans prendre en compte les échecs au roi"""
         pass
 
-    def legal_moves(self, board: Logic) -> list:
+    def legal_moves(self, board: Logic) -> list[(int, int)]:
         """ Returns the list of every almost legal move this piece has which means it does not care about checks,
         checks are handled in  legal_moves """
 

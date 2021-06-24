@@ -1,6 +1,5 @@
-import pygame
 from screeninfo import get_monitors
-
+from pygame import image
 main = get_monitors()[0]
 for m in get_monitors()[1:]:
     if m.width > main.width:
@@ -13,7 +12,7 @@ LIGHTBEIGE = 181, 136, 99
 BROWN = 240, 217, 181
 GREEN = 63, 123, 82
 ORANGE = 253, 189, 89
-RED = (250, 41, 76)
+RED = 250, 41, 76
 GREY = 185, 199, 185
 
 BG_COLOR = BLACK
@@ -29,19 +28,19 @@ BOARDTOPLEFTPOS = (MIDW - BOARDSIZE // 2, MIDH - BOARDSIZE // 2)
 
 # Pieces
 
-P_image = pygame.image.load(r"assets/row-1-col-6.png")  # white
-R_image = pygame.image.load(r"assets/row-1-col-5.png")
-N_image = pygame.image.load(r"assets/row-1-col-4.png")
-B_image = pygame.image.load(r"assets/row-1-col-3.png")
-Q_image = pygame.image.load(r"assets/row-1-col-2.png")
-K_image = pygame.image.load(r"assets/row-1-col-1.png")
+P_image = image.load(r"assets/row-1-col-6.png")  # white
+R_image = image.load(r"assets/row-1-col-5.png")
+N_image = image.load(r"assets/row-1-col-4.png")
+B_image = image.load(r"assets/row-1-col-3.png")
+Q_image = image.load(r"assets/row-1-col-2.png")
+K_image = image.load(r"assets/row-1-col-1.png")
 
-p_image = pygame.image.load(r"assets/row-2-col-6.png")  # black
-r_image = pygame.image.load(r"assets/row-2-col-5.png")
-n_image = pygame.image.load(r"assets/row-2-col-4.png")
-b_image = pygame.image.load(r"assets/row-2-col-3.png")
-q_image = pygame.image.load(r"assets/row-2-col-2.png")
-k_image = pygame.image.load(r"assets/row-2-col-1.png")
+p_image = image.load(r"assets/row-2-col-6.png")  # black
+r_image = image.load(r"assets/row-2-col-5.png")
+n_image = image.load(r"assets/row-2-col-4.png")
+b_image = image.load(r"assets/row-2-col-3.png")
+q_image = image.load(r"assets/row-2-col-2.png")
+k_image = image.load(r"assets/row-2-col-1.png")
 
 # other
 STARTINGPOSFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
