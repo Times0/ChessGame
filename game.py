@@ -112,7 +112,7 @@ class Game:
                 elif self.players[self.logic.turn] == "bot":
                     if hasTothink:
                         print("Started thinking")
-                        bot_process = multiprocessing.Process(target=self.bots[self.logic.turn].play_random,
+                        bot_process = multiprocessing.Process(target=self.bots[self.logic.turn].play,
                                                               args=(self.logic, the_list))
                         bot_process.start()
                         hasTothink = False

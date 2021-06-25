@@ -165,6 +165,9 @@ class Logic:
         elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6 and piece.never_moved:
             self.real_move(7, 7, 7, 5, False)
 
+        if piece.abreviation.lower() == "p" and dest_i == (0 if piece.direction == -1 else 7):
+            piece = Queen(piece.color, i, j)
+
         self.board[i][j] = None
         self.board[dest_i][dest_j] = piece
         self.board[dest_i][dest_j].moved(dest_i, dest_j)
