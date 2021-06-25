@@ -89,13 +89,13 @@ class Board:
         for i in range(8):
             for j in range(8):
                 if board[i][j] == "gone":
-                    image = self.dragged_piece.image
+                    image = globals()[f"{self.dragged_piece.abreviation}_image"]
                     image = pygame.transform.smoothscale(image, (self.case_size, self.case_size))
                     win.blit(image,
                              (self.dragged_piece_pos[0] - self.case_size // 2,
                               self.dragged_piece_pos[1] - self.case_size // 2))
                 elif (board[i][j]) is not None:
-                    image = board[i][j].image
+                    image = globals()[f"{board[i][j].abreviation}_image"]
                     image = pygame.transform.smoothscale(image, (self.case_size, self.case_size))
                     win.blit(image, (self.x + self.case_size * j, self.y + self.case_size * i))
 

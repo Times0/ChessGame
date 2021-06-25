@@ -13,9 +13,9 @@ class Logic:
 
     def __init__(self, fen):
         self.board = [[None for _ in range(8)] for _ in range(8)]
+        self.turn = "white"
         self.load_fen(fen)
 
-        self.turn = "white"
         # variables pour les privilèges de roquer
         self.castle_rights = "kqKQ"  # kingside, queenside
         # ["game_on","blackwins", "whitewins", "stalemate"]
@@ -89,7 +89,8 @@ class Logic:
                     L.extend(piece.attacking_squares(self))
         return list(set(L))
 
-    def legal_moves(self, color: str) -> list[(int, int, int, int)]:
+    def legal_moves(self, color="") -> list[(int, int, int, int)]:
+        color = self.turn if color == "" else color
         """origin, destination"""
         returnlist = []
         for i in range(8):
@@ -172,10 +173,7 @@ class Logic:
         self.update_game_state(self.turn)
 
     def switch_turn(self) -> None:
-        if self.turn == "white":
-            self.turn = "black"
-        else:
-            self.turn = "white"
+        self.turn = "white" if self.turn == "black" else "black"
 
     def __repr__(self) -> str:
         returnboard = [[" " for _ in range(8)] for _ in range(8)]
@@ -238,7 +236,7 @@ class Pawn(Piece):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
 
-        self.image = globals()[f"{self.abreviation}_image"]
+        # self.image = globals()[f"{self.abreviation}_image"]
         self.direction = -1 if self.color == 'white' else +1
 
     def almost_legal_moves(self, board: Logic) -> list:
@@ -280,7 +278,7 @@ class Bishop(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
-        self.image = globals()[f"{self.abreviation}_image"]
+        # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
         piece_at = board.piece_at
@@ -304,7 +302,7 @@ class Rook(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
-        self.image = globals()[f"{self.abreviation}_image"]
+        # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
         piece_at = board.piece_at
@@ -326,7 +324,7 @@ class Knight(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
-        self.image = globals()[f"{self.abreviation}_image"]
+        # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
         piece_at = board.piece_at
@@ -340,7 +338,7 @@ class Queen(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
-        self.image = globals()[f"{self.abreviation}_image"]
+        # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
         piece_at = board.piece_at
@@ -362,7 +360,7 @@ class King(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
-        self.image = globals()[f"{self.abreviation}_image"]
+        # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
         piece_at = board.piece_at
