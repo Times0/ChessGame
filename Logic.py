@@ -423,6 +423,15 @@ class King(Piece):
                 returnlist.append((i1, j1))
         return returnlist
 
+    def getScore (self, board):
+        values = {"p": 1, "r": 5, "b": 3, "n": 3, "q": 9}   #valeurs associées aux pièces
+        returnlist = [0,0]  # de la forme : [score_white , score_black]
+        for i, j in range(7):
+            key = board.piece_at(i,j).abreviation
+            returnlist[1] += (values[key] if key in values.keys() else 0)
+            returnlist[0] += (values[key.lower()] if key in values.keys().upper() else 0)
+        return returnlist
+
 
 dico = {"p": Pawn, "r": Rook, "b": Bishop, "n": Knight, "q": Queen, "k": King}
 
