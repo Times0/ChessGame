@@ -4,14 +4,13 @@ import numpy as np
 
 from fonctions import isInbounds, other_color
 
-from constants import *
-
 
 class Logic:
     """ a Logic instance is an independant chess board that has every fonction needed to play the game like isMate(
     color) or cases_attacked_by(color) and attributes such as turn, state, castle_rights etc"""
 
     def __init__(self, fen):
+        self.mark = list()  # en passant
         self.board = [[None for _ in range(8)] for _ in range(8)]
         self.turn = "white"
         self.load_fen(fen)
@@ -36,6 +35,8 @@ class Logic:
                     j += int(c)
                 elif c.isalpha():
                     b_row.append(piece_from_abreviation(c, i, j))
+                    if c.upper() == "P" and i != (1 if b_row[-1].color == "black" else 6):
+                        b_row[-1].never_moved = False
                     j += 1
             board.append(b_row)
             i += 1
@@ -104,7 +105,7 @@ class Logic:
         return returnlist
 
     def king_coord(self, color: str) -> tuple:
-        king_i, king_j = 0, 0
+
         for i in range(8):
             for j in range(8):
                 if self.piece_at(i, j) and self.board[i][j].abreviation == ("K" if color == "white" else "k"):
@@ -155,7 +156,8 @@ class Logic:
         if not piece:
             print('no piece here')
             raise Exception
-
+        self.mark = []
+        # special moves
         if i == 0 and j == 4 and dest_i == 0 and dest_j == 2 and piece.never_moved:
             self.real_move(0, 0, 0, 3, False)
         elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6 and piece.never_moved:
@@ -165,8 +167,12 @@ class Logic:
         elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6 and piece.never_moved:
             self.real_move(7, 7, 7, 5, False)
 
-        if piece.abreviation.lower() == "p" and dest_i == (0 if piece.direction == -1 else 7):
+        elif piece.abreviation.lower() == "p" and dest_i == (0 if piece.direction == -1 else 7):
             piece = Queen(piece.color, i, j)
+        elif piece.abreviation.lower() == "p" and dest_i == i + 2 * piece.direction:
+            self.mark = [(i + piece.direction, j)]
+        elif piece.abreviation.lower() == 'p' and j != dest_j and not self.piece_at(dest_i, dest_j):
+            self.board[i][dest_j] = None
 
         self.board[i][j] = None
         self.board[dest_i][dest_j] = piece
@@ -259,9 +265,16 @@ class Pawn(Piece):
                     returnlist.append((i2, j))
 
         # captures
-        for j in [j - 1, j + 1]:
-            if isInbounds(i1, j) and piece_at(i1, j) and piece_at(i1, j).color != self.color:
-                returnlist.append((i1, j))
+        for ja in [j - 1, j + 1]:
+            if isInbounds(i1, ja) and piece_at(i1, ja) and piece_at(i1, ja).color != self.color:
+                returnlist.append((i1, ja))
+
+        # en croissant
+        if i == (3 if self.color == "white" else 4):
+            for jb in [j - 1, j + 1]:
+                if isInbounds(i1, jb) and (i1, jb) in board.mark:
+                    returnlist.append((i1, jb))
+
         return returnlist
 
     def attacking_squares(self, board) -> list:

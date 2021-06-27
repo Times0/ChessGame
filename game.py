@@ -1,12 +1,10 @@
-import copy
-import time
-import pathos
 import multiprocessing
+
 import Button
+import bot
 from Board import *
 from Logic import Logic
 from fonctions import *
-import bot
 
 
 class Game:
@@ -15,7 +13,7 @@ class Game:
         self.logic = Logic(fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
-        self.players = {"white": "bot", "black": "human"}  # MODIFY HERE
+        self.players = {"white": "human", "black": "human"}  # MODIFY HERE
         self.bots = {"white": bot.Edouard("white"), "black": bot.Edouard("black")}
 
         self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X")]
