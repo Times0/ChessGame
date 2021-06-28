@@ -1,7 +1,7 @@
-import copy
+from copy import deepcopy
 from itertools import product
 
-import numpy as np
+from numpy import matrix
 
 from fonctions import isInbounds, other_color
 
@@ -67,32 +67,35 @@ class Logic:
 
     def get_fen(self) -> str:
         """returns the fen of the current position"""
-        returnfen = ""
-        # liste des caractèrs représentant les pièces
         i, j = 0, 0
+        lines = list()
         while i < 8:
+            line = ""
             while j < 8:
                 # si on a un espace
                 if not self.piece_at(i, j):
                     c = 0
-                    while j < 8 and self.piece_at(i, j) is None:
+                    while j < 8 and not self.piece_at(i, j):
                         c += 1
                         j += 1
-                    returnfen += str(c)
+                    line += str(c)
                 else:
-                    returnfen += self.piece_at(i, j).abreviation
+                    line += self.piece_at(i, j).abreviation
                     j += 1
-            returnfen += "/"
+            lines.append(line)
             i += 1
             j = 0
-        # propriétés de l'échequier :
 
-        returnfen += f" {'w' if self.turn == 'white' else 'black'}"
-        returnfen += f" {self.castle_rights}"
+        board = "/".join(lines)
+        turn = self.turn[0]
+        castle_rights = f"{self.castle_rights}"
+
+        returnfen = " ".join([board, turn, castle_rights])
         return returnfen
 
     def data(self):
-        return copy.deepcopy(self.board), self.castle_rights, self.turn
+        newboard = deepcopy(self.board)
+        return newboard, self.castle_rights, self.turn
 
     def piece_at(self, i, j):
         return self.board[i][j]
@@ -128,6 +131,10 @@ class Logic:
                     king_i, king_j = i, j
                     return king_i, king_j
 
+    def king(self, color: str):
+        i, j = self.king_coord(color)
+        return self.board[i][j]
+
     def isIncheck(self, color: str) -> bool:
         i, j = self.king_coord(color)
         return (i, j) in self.cases_attacked_by(("white" if color == "black" else "black"))
@@ -138,16 +145,12 @@ class Logic:
     def isStalemate(self, color: str) -> bool:
         return self.legal_moves(color) == []
 
-    def king(self, color: str):
-        i, j = self.king_coord(color)
-        return self.board[i][j]
-
     def update_game_state(self, color: str):
         """ possible states : ["black wins","white wins","stalemate"]"""
         if self.isMate(color):
             self.state = other_color(color) + "wins"
         elif self.isStalemate(color):
-            self.state = "stalemeate"
+            self.state = "draw"
 
     def move(self, i: int, j: int, dest_i, dest_j) -> None:
         """
@@ -157,6 +160,7 @@ class Logic:
         """
         piece = self.board[i][j]
         if piece is None:
+            print(i, j)
             print('no piece here')
             raise Exception
 
@@ -193,7 +197,7 @@ class Logic:
         elif piece.abreviation.lower() == "p" and dest_i == i + 2 * piece.direction:
             self.mark = [(i + piece.direction, j)]
         elif piece.abreviation.lower() == 'p' and j != dest_j and not self.piece_at(dest_i, dest_j):
-            self.board[i][dest_j] = None
+            self.capture(i, dest_j)
 
         self.board[i][j] = None
         self.board[dest_i][dest_j] = piece
@@ -201,6 +205,9 @@ class Logic:
         if switch_turn:
             self.switch_turn()
         self.update_game_state(self.turn)
+
+    def capture(self, i, j):
+        self.board[i][j] = None
 
     def switch_turn(self) -> None:
         self.turn = "white" if self.turn == "black" else "black"
@@ -214,8 +221,20 @@ class Logic:
                     score += values[piece.abreviation.lower()]
         return score
 
-    def get_eval(self):
+    def get_static_simple_eval(self):
         return self.get_score("white") - self.get_score("black")
+
+    def get_static_eval(self):
+        simple_eval = self.get_static_simple_eval()
+        if self.nb_pieces_on_board() >= 4:
+            return simple_eval
+
+        i, j = self.king_coord("black")
+        center_penality = (abs(3 - i) * abs(3 + j)) / 16
+        return simple_eval + center_penality
+
+    def nb_pieces_on_board(self):
+        return len([0 for i in range(8) for j in range(8) if self.board[i][j]])
 
     def __repr__(self) -> str:
         returnboard = [[" " for _ in range(8)] for _ in range(8)]
@@ -224,7 +243,7 @@ class Logic:
                 if self.board[i][j]:
                     returnboard[i][j] = self.board[i][j].abreviation
 
-        return str(np.matrix(returnboard))
+        return str(matrix(returnboard))
 
 
 class Piece:
@@ -255,7 +274,7 @@ class Piece:
         if self.color != logic.turn:
             return []
         for move in self.almost_legal_moves(logic):
-            virtual = Logic(data=(logic.data()))
+            virtual = Logic(fen=logic.get_fen())
             virtual.move(self.i, self.j, *move)
             if not virtual.isIncheck(self.color):
                 returnlist.append(move)
@@ -420,28 +439,26 @@ class King(Piece):
             if isInbounds(i1, j1) and (not piece_at(i1, j1) or piece_at(i1, j1).color != self.color):
                 returnlist.append((i1, j1))
 
-        bc = board.castle_rights
-        rights_w = ""  # c'est de la merde
-        rights_b = ""  # c'est de la merde
-        for c in bc:
-            if c.upper() == c:
-                rights_w += c
-            elif c.lower() == c:
-                rights_b += c
-        rights = (rights_b if self.color == "black" else rights_w).upper()
-        attack = board.cases_attacked_by(self.color)
-        if self.never_moved:
-            for e in [n for n in [-1 * ("Q" in rights), 1 * ("K" in rights)] if n != 0]:  # queenside, kingside
+        castle_rights = board.castle_rights
 
-                if [([i, b + j] not in attack) and (not piece_at(i, b + j) or b == 0) for b in [0, 1 * e, 2 * e]] == [
-                    True] * 3:
-                    coord1, coord2 = (7 if e == 1 and self.color == "white" else 0), (
-                        0 if e == -1 and self.color == "black" else 7)
-                    # black : k [0,7] q [0,0]
-                    # white : K [7,7] Q [0,7]
-                    if piece_at(coord1, coord2) and piece_at(coord1, coord2).abreviation.upper() == "R" and piece_at(
-                            coord1, coord2).never_moved:
-                        returnlist.append((i, j + 2 * e))
+        if self.color == "white":
+            rights = str([char for char in castle_rights if char.lower() == char])
+        else:
+            rights = str([char for char in castle_rights if char.upper() == char])
+        if rights:
+            i, j = (0, 4) if self.color == "black" else (7, 4)
+            if "k" in rights.lower():
+                if not piece_at(i, j + 1) and not piece_at(i, j + 2):
+                    attacked_cases = board.cases_attacked_by(other_color(self.color))
+                    if (i, j) not in attacked_cases and (i, j + 1) not in attacked_cases and (
+                            i, j + 2) not in attacked_cases:
+                        returnlist.append((i, j + 2))
+            if "q" in rights.lower():
+                if not piece_at(i, j - 1) and not piece_at(i, j - 2) and not piece_at(i, j - 3):
+                    attacked_cases = board.cases_attacked_by(other_color(self.color))
+                    if (i, j) not in attacked_cases and (i, j - 1) not in attacked_cases and (
+                            i, j - 2) not in attacked_cases:
+                        returnlist.append((i, j - 2))
         return returnlist
 
     def attacking_squares(self, board):

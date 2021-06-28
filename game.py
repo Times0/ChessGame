@@ -13,9 +13,8 @@ class Game:
         self.logic = Logic(fen=fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
-        self.players = {"white": "bot", "black": "human"}  # MODIFY HERE
+        self.players = {"white": "human", "black": "bot"}  # MODIFY HERE
         self.bots = {"white": bot.Edouard("white"), "black": bot.Edouard("black")}
-
         self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X")]
 
     def run(self):
@@ -107,6 +106,14 @@ class Game:
                 elif self.players[self.logic.turn] == "bot":
                     if hasTothink:
                         print("Started thinking")
+
+                        # find what took time
+                        # with cProfile.Profile() as pr:
+                        #  self.bots[self.logic.turn].play(self.logic, the_list)
+                        # stats = pstats.Stats(pr)
+                        # stats.sort_stats(pstats.SortKey.TIME)
+                        # stats.print_stats()
+
                         bot_process = multiprocessing.Process(target=self.bots[self.logic.turn].play,
                                                               args=(self.logic, the_list))
                         bot_process.start()
