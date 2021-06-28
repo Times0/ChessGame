@@ -1,3 +1,4 @@
+import copy
 from itertools import product
 
 import numpy as np
@@ -9,15 +10,27 @@ class Logic:
     """ a Logic instance is an independant chess board that has every fonction needed to play the game like isMate(
     color) or cases_attacked_by(color) and attributes such as turn, state, castle_rights etc"""
 
-    def __init__(self, fen):
-        self.mark = list()  # en passant
-        self.board = [[None for _ in range(8)] for _ in range(8)]
-        self.turn = "white"
-        self.load_fen(fen)
+    def __init__(self, data=None, fen=None):
+        """
 
-        # variables pour les privilèges de roquer
-        self.castle_rights = "kqKQ"  # kingside, queenside
-        # ["game_on","blackwins", "whitewins", "stalemate"]
+        :param data: de la forme : board, castle_rights
+        :param fen:
+        """
+        if data:
+            self.board = data[0]
+            self.castle_rights = data[1]
+            self.turn = data[2]
+        elif fen:
+            # variables pour les privilèges de roquer
+            self.castle_rights = "kqKQ"  # kingside, queenside
+            # ["game_on","blackwins", "whitewins", "stalemate"]
+            self.board = [[None for _ in range(8)] for _ in range(8)]
+            self.turn = "white"
+            self.load_fen(fen)
+        else:
+            raise ArithmeticError
+        self.mark = list()  # en passant
+
         self.state = "game_on"
 
     def load_fen(self, fen) -> None:
@@ -77,6 +90,9 @@ class Logic:
         returnfen += f" {'w' if self.turn == 'white' else 'black'}"
         returnfen += f" {self.castle_rights}"
         return returnfen
+
+    def data(self):
+        return copy.deepcopy(self.board), self.castle_rights, self.turn
 
     def piece_at(self, i, j):
         return self.board[i][j]
@@ -158,6 +174,8 @@ class Logic:
             raise Exception
         self.mark = []
         # special moves
+
+        # castle
         if i == 0 and j == 4 and dest_i == 0 and dest_j == 2 and piece.never_moved:
             self.real_move(0, 0, 0, 3, False)
         elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6 and piece.never_moved:
@@ -167,8 +185,11 @@ class Logic:
         elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6 and piece.never_moved:
             self.real_move(7, 7, 7, 5, False)
 
+        # promotion
         elif piece.abreviation.lower() == "p" and dest_i == (0 if piece.direction == -1 else 7):
             piece = Queen(piece.color, i, j)
+
+        # en passant
         elif piece.abreviation.lower() == "p" and dest_i == i + 2 * piece.direction:
             self.mark = [(i + piece.direction, j)]
         elif piece.abreviation.lower() == 'p' and j != dest_j and not self.piece_at(dest_i, dest_j):
@@ -184,6 +205,18 @@ class Logic:
     def switch_turn(self) -> None:
         self.turn = "white" if self.turn == "black" else "black"
 
+    def get_score(self, color):
+        score = 0
+        for i in range(8):
+            for j in range(8):
+                piece = self.piece_at(i, j)
+                if piece and piece.color == color:
+                    score += values[piece.abreviation.lower()]
+        return score
+
+    def get_eval(self):
+        return self.get_score("white") - self.get_score("black")
+
     def __repr__(self) -> str:
         returnboard = [[" " for _ in range(8)] for _ in range(8)]
         for i in range(8):
@@ -193,17 +226,6 @@ class Logic:
 
         return str(np.matrix(returnboard))
 
-    def getScore (self, board, color):
-        values = {"p": 1, "r": 5, "b": 3, "n": 3, "q": 9}   #valeurs associées aux pièces
-        score = 0
-        if color == "white" :
-            keys = values.keys().upper()
-        else :
-            keys = values.keys()
-        for i, j in range(7):
-            key = board.piece_at(i,j).abreviation
-            score += (values[key] if key in keys else 0)
-        return score
 
 class Piece:
     def __init__(self, color, i, j):
@@ -225,19 +247,18 @@ class Piece:
         en prenant en compte les autres pièces de l'échequier mais sans prendre en compte les échecs au roi"""
         pass
 
-    def legal_moves(self, board: Logic) -> list[(int, int)]:
+    def legal_moves(self, logic: Logic) -> list[(int, int)]:
         """ Returns the list of every almost legal move this piece has which means it does not care about checks,
         checks are handled in  legal_moves """
 
         returnlist = []
-        if self.color != board.turn:
+        if self.color != logic.turn:
             return []
-        for move in self.almost_legal_moves(board):
-            virtual = Logic(board.get_fen())
+        for move in self.almost_legal_moves(logic):
+            virtual = Logic(data=(logic.data()))
             virtual.move(self.i, self.j, *move)
             if not virtual.isIncheck(self.color):
                 returnlist.append(move)
-
         return returnlist
 
     def attacking_squares(self, board) -> list:
@@ -435,9 +456,8 @@ class King(Piece):
         return returnlist
 
 
-
-
 dico = {"p": Pawn, "r": Rook, "b": Bishop, "n": Knight, "q": Queen, "k": King}
+values = {"p": 1, "r": 5, "b": 3, "n": 3, "q": 9, "k": 0}
 
 
 def piece_from_abreviation(abreviation, i, j):

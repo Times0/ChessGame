@@ -1,5 +1,6 @@
-from screeninfo import get_monitors
 from pygame import image
+from screeninfo import get_monitors
+
 main = get_monitors()[0]
 for m in get_monitors()[1:]:
     if m.width > main.width:
@@ -50,3 +51,4 @@ fenmate = "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 1"
 test = 'rn1qkb1r/pp2pppp/5n2/3p1b2/3P4/2N1P3/PP3PPP/R1BQKBNR w KQkq - 0 1 id "CCR01"; bm Qb3;'
 stalematefen = "2k5/8/8/8/8/8/3Q4/2K5 w - - 0 1"
 castlefen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1"
+mate2fen = "r1b2r2/pp4pp/1qnbpk2/3p2nQ/3P1N2/1P4PB/P4P1P/R1B2RK1 w - - 2 18"

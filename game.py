@@ -10,10 +10,10 @@ from fonctions import *
 class Game:
     def __init__(self, win, fen):
         self.win = win
-        self.logic = Logic(fen)
+        self.logic = Logic(fen=fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
-        self.players = {"white": "human", "black": "human"}  # MODIFY HERE
+        self.players = {"white": "bot", "black": "human"}  # MODIFY HERE
         self.bots = {"white": bot.Edouard("white"), "black": bot.Edouard("black")}
 
         self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X")]
@@ -31,7 +31,6 @@ class Game:
         while win_running:
             clock.tick(60)
             self.win.fill(BG_COLOR)
-
             # gestion des évènements
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:  # si on appuie sur la croix
@@ -53,7 +52,6 @@ class Game:
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and \
                             isInrectangle(event.pos, BOARDTOPLEFTPOS, BOARDSIZE, BOARDSIZE):
 
-                        # move = *previous_coord, *self.board.coord_from_pos(*event.pos)
                         # si on clique sur une pièce
                         previous_coord = self.board.clicked_piece_coord
                         if previous_coord:
@@ -68,8 +66,7 @@ class Game:
                             self.board.legal_moves_to_output = moves
 
                         # si on clique sur une case vide qui est un legal move, on effectue le move
-
-                        elif move in self.logic.legal_moves():
+                        elif self.board.legal_moves_to_output and move in self.logic.legal_moves():
                             _move_info = True
                             actual_move = move
                             self.board.legal_moves_to_output = []
@@ -119,7 +116,7 @@ class Game:
                         genius_move = the_list[0]
                         the_list[0] = None
                         hasTothink = True
-                        self.logic.real_move(*genius_move)
+                        self.logic.real_move(*genius_move[1])
                         self.board.update(self.logic)
                         if self.logic.state != "game_on":
                             game_on = False  # on arrete la boucle du jeu

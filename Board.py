@@ -1,5 +1,6 @@
-from constants import *
 import pygame
+
+from constants import *
 
 
 class Board:
@@ -119,6 +120,7 @@ class Board:
                 self.case_size, self.case_size))
 
     def __repr__(self):  # useless
+
         returnboard = [[None for _ in range(8)] for _ in range(8)]
         for i in range(8):
             for j in range(8):
