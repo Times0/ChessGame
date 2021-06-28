@@ -100,7 +100,9 @@ class Edouard:
 
     # minimax with pruning
     def minmax_alpha_beta(self, logic, depth, alpha, beta, maximizing):
-        logic.update_game_state("white" if maximizing else "black")
+        color = "white" if maximizing else "black"
+        if logic.isIncheck(color):
+            logic.update_game_state(color)
 
         if depth == 0:
             return logic.get_static_eval(), None
