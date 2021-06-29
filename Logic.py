@@ -1,6 +1,7 @@
 from copy import deepcopy
 from itertools import product
 
+import numpy as np
 from numpy import matrix
 
 from fonctions import isInbounds, other_color
@@ -10,7 +11,7 @@ class Logic:
     """ a Logic instance is an independant chess board that has every fonction needed to play the game like isMate(
     color) or cases_attacked_by(color) and attributes such as turn, state, castle_rights etc"""
 
-    def __init__(self, data=None, fen=None):
+    def __init__(self, data=None, fen=None, data2=np.array(None)):
         """
 
         :param data: de la forme : board, castle_rights
@@ -20,6 +21,12 @@ class Logic:
             self.board = data[0]
             self.castle_rights = data[1]
             self.turn = data[2]
+
+        elif data2.size > 1:
+            self.board = list()
+            self.load_data(data2)
+            self.castle_rights = "KQkq"
+
         elif fen:
             # variables pour les privilèges de roquer
             self.castle_rights = "kqKQ"  # kingside, queenside
@@ -97,6 +104,46 @@ class Logic:
         newboard = deepcopy(self.board)
         return newboard, self.castle_rights, self.turn
 
+    def castle_rights_bit(self):
+        return [0 for char in self.castle_rights if 1]
+
+    def get_data(self):
+        L = np.array(
+            [self.board[i][j].value
+             if self.board[i][j] and self.board[i][j].color == "white"
+             else self.board[i][j].value + 10 if self.board[i][j] else 0 for i in range(8) for j in range(8)],
+            dtype=np.int8)
+        L = np.append(L, (1 if self.turn == "white" else 0))
+        return L
+
+    def load_data(self, data):
+        # print("\n\nSTART ")
+
+        L = list()
+        for i in range(8):
+
+            L.append(
+                [dico2[val - 10]("black", 0, 0)
+                 if val > 10
+                 else dico2[val]("white", 0, 0)
+                if val != 0
+                else dico2[val] for val in data[i * 8:i * 8 + 8]])
+
+            for j in range(8):
+                if L[i][j]:
+                    L[i][j].set_coord_weird(i, j)
+        self.board = L
+        self.turn = "white" if data[64] == 1 else "black"
+
+    def check(self):
+        for i in range(8):
+            for j in range(8):
+                if self.piece_at(i, j):
+                    if self.board[i][j].i != i or self.board[i][j].j != j:
+                        print(i, j, self.board[i][j].i, self.board[i][j].j)
+                        # return False
+        return True
+
     def piece_at(self, i, j):
         return self.board[i][j]
 
@@ -123,6 +170,14 @@ class Logic:
                             returnlist.append((i, j, *legal))
         return returnlist
 
+    def hasLegalmoves(self, color):
+        for i in range(8):
+            for j in range(8):
+                piece = self.piece_at(i, j)
+                if piece and piece.color == color and piece.legal_moves(self):
+                    return True
+        return False
+
     def king_coord(self, color: str) -> tuple:
 
         for i in range(8):
@@ -140,15 +195,15 @@ class Logic:
         return (i, j) in self.cases_attacked_by(("white" if color == "black" else "black"))
 
     def isMate(self, color: str) -> bool:
-        return self.isIncheck(color) and self.legal_moves(color) == []
+        return self.isIncheck(color) and not self.hasLegalmoves(color)
 
     def isStalemate(self, color: str) -> bool:
-        return self.legal_moves(color) == []
+        return not self.hasLegalmoves(color)
 
     def update_game_state(self, color: str):
         """ possible states : ["black wins","white wins","stalemate"]"""
         if self.isMate(color):
-            self.state = other_color(color) + "wins"
+            self.state = "".join([other_color(color), "wins"])
         elif self.isStalemate(color):
             self.state = "draw"
 
@@ -204,6 +259,7 @@ class Logic:
         self.board[dest_i][dest_j].moved(dest_i, dest_j)
         if switch_turn:
             self.switch_turn()
+        print("update")
         self.update_game_state(self.turn)
 
     def capture(self, i, j):
@@ -261,6 +317,9 @@ class Piece:
             abreviation = abreviation.upper()
         self.abreviation = abreviation
 
+    def set_coord_weird(self, i, j):
+        self.i, self.j = i, j
+
     def almost_legal_moves(self, board: Logic) -> list:
         """Cette fonction est overriden pour chacune des pièces, elle renvoie les moves possible pour une pièce
         en prenant en compte les autres pièces de l'échequier mais sans prendre en compte les échecs au roi"""
@@ -274,9 +333,15 @@ class Piece:
         if self.color != logic.turn:
             return []
         for move in self.almost_legal_moves(logic):
-            virtual = Logic(fen=logic.get_fen())
+            virtual = Logic(data2=logic.get_data())
+            # virtual2 = Logic(data=logic.data())
+            # color = virtual2.turn
+            # print(virtual, "\n\n", virtual2, virtual.turn, virtual2.turn, virtual.isIncheck(color),
+            # virtual2.isIncheck(color))
+
             virtual.move(self.i, self.j, *move)
             if not virtual.isIncheck(self.color):
+                # print(f"Not in check with the move {move}")
                 returnlist.append(move)
         return returnlist
 
@@ -295,8 +360,7 @@ class Pawn(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
-
-        # self.image = globals()[f"{self.abreviation}_image"]
+        self.value = 1
         self.direction = -1 if self.color == 'white' else +1
 
     def almost_legal_moves(self, board: Logic) -> list:
@@ -312,7 +376,7 @@ class Pawn(Piece):
             returnlist.append((i1, j))
             if self.never_moved:
                 i2 = i1 + dir  # deux cases devant le pion
-                if not piece_at(i2, j):
+                if isInbounds(i2, j) and not piece_at(i2, j):
                     returnlist.append((i2, j))
 
         # captures
@@ -345,6 +409,7 @@ class Bishop(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
+        self.value = 2
         # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
@@ -369,6 +434,7 @@ class Rook(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
+        self.value = 3
         # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
@@ -391,6 +457,7 @@ class Knight(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
+        self.value = 4
         # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
@@ -405,6 +472,7 @@ class Queen(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
+        self.value = 5
         # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
@@ -427,6 +495,7 @@ class King(Piece):
     def __init__(self, color, i, j):
         super().__init__(color, i, j)
         self.set_abreviation(self.__class__)
+        self.value = 6
         # self.image = globals()[f"{self.abreviation}_image"]
 
     def almost_legal_moves(self, board):
@@ -474,6 +543,7 @@ class King(Piece):
 
 
 dico = {"p": Pawn, "r": Rook, "b": Bishop, "n": Knight, "q": Queen, "k": King}
+dico2 = {0: None, 1: Pawn, 2: Bishop, 3: Rook, 4: Knight, 5: Queen, 6: King}
 values = {"p": 1, "r": 5, "b": 3, "n": 3, "q": 9, "k": 0}
 
 

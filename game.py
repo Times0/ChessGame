@@ -13,7 +13,7 @@ class Game:
         self.logic = Logic(fen=fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
-        self.players = {"white": "human", "black": "bot"}  # MODIFY HERE
+        self.players = {"white": "bot", "black": "bot"}  # MODIFY HERE
         self.bots = {"white": bot.Edouard("white"), "black": bot.Edouard("black")}
         self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X")]
 
@@ -99,6 +99,7 @@ class Game:
                 if self.players[self.logic.turn] == "human":
                     if _move_info:
                         self.logic.real_move(*actual_move)
+
                         self.board.update(self.logic)
                         if self.logic.state != "game_on":
                             game_on = False  # on arrete la boucle du jeu
@@ -109,7 +110,7 @@ class Game:
 
                         # find what took time
                         # with cProfile.Profile() as pr:
-                        #  self.bots[self.logic.turn].play(self.logic, the_list)
+                        #   self.bots[self.logic.turn].play(self.logic, the_list)
                         # stats = pstats.Stats(pr)
                         # stats.sort_stats(pstats.SortKey.TIME)
                         # stats.print_stats()
@@ -138,7 +139,7 @@ class Game:
 
     def draw_everything(self):
         self.board.draw(self.win, *BOARDTOPLEFTPOS)
-
+        # self.board.draw_attacked_cases(self.win)
         for button in self.buttons:
             button.draw(self.win)
 
