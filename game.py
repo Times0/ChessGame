@@ -13,7 +13,7 @@ class Game:
         self.logic = Logic(fen=fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
-        self.players = {"white": "bot", "black": "bot"}  # MODIFY HERE
+        self.players = {"white": "human", "black": "bot"}  # MODIFY HERE
         self.bots = {"white": bot.Edouard("white"), "black": bot.Edouard("black")}
         self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X")]
 
