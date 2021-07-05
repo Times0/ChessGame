@@ -11,12 +11,15 @@ class Logic:
     """ a Logic instance is an independant chess board that has every fonction needed to play the game like isMate(
     color) or cases_attacked_by(color) and attributes such as turn, state, castle_rights etc"""
 
-    def __init__(self, data=None, fen=None, data2=np.array(None)):
+    def __init__(self, data=None, fen=None, data2=None):
         """
 
         :param data: de la forme : board, castle_rights
         :param fen:
         """
+        if isinstance(data2, type(None)):
+            data2 = np.array(None)
+
         if data:
             self.board = data[0]
             self.castle_rights = data[1]
@@ -25,7 +28,7 @@ class Logic:
         elif data2.size > 1:
             self.board = list()
             self.load_data(data2)
-            self.castle_rights = "KQkq"
+            self.castle_rights = ""
 
         elif fen:
             # variables pour les privilèges de roquer
@@ -229,20 +232,22 @@ class Logic:
         turn is set to false when moving the rook during castling"""
         piece = self.board[i][j]
         if not piece:
-            print('no piece here')
+            print(f"{i,j=}")
+            print(f"{self}")
             raise Exception
         self.mark = []
         # special moves
 
         # castle
-        if i == 0 and j == 4 and dest_i == 0 and dest_j == 2 and piece.never_moved:
-            self.real_move(0, 0, 0, 3, False)
-        elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6 and piece.never_moved:
-            self.real_move(0, 0, 0, 5, False)
-        elif i == 7 and j == 4 and dest_i == 7 and dest_j == 2 and piece.never_moved:
-            self.real_move(7, 0, 7, 3, False)
-        elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6 and piece.never_moved:
-            self.real_move(7, 7, 7, 5, False)
+        if piece.abreviation.lower() == "k":
+            if i == 0 and j == 4 and dest_i == 0 and dest_j == 2 and piece.never_moved:
+                self.real_move(0, 0, 0, 3, False)
+            elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6 and piece.never_moved:
+                self.real_move(0, 7, 0, 5, False)
+            elif i == 7 and j == 4 and dest_i == 7 and dest_j == 2 and piece.never_moved:
+                self.real_move(7, 0, 7, 3, False)
+            elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6 and piece.never_moved:
+                self.real_move(7, 7, 7, 5, False)
 
         # promotion
         elif piece.abreviation.lower() == "p" and dest_i == (0 if piece.direction == -1 else 7):
@@ -259,8 +264,6 @@ class Logic:
         self.board[dest_i][dest_j].moved(dest_i, dest_j)
         if switch_turn:
             self.switch_turn()
-        print("update")
-        self.update_game_state(self.turn)
 
     def capture(self, i, j):
         self.board[i][j] = None
@@ -339,7 +342,7 @@ class Piece:
             # print(virtual, "\n\n", virtual2, virtual.turn, virtual2.turn, virtual.isIncheck(color),
             # virtual2.isIncheck(color))
 
-            virtual.move(self.i, self.j, *move)
+            virtual.real_move(self.i, self.j, *move)
             if not virtual.isIncheck(self.color):
                 # print(f"Not in check with the move {move}")
                 returnlist.append(move)

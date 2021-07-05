@@ -99,8 +99,8 @@ class Game:
                 if self.players[self.logic.turn] == "human":
                     if _move_info:
                         self.logic.real_move(*actual_move)
-
                         self.board.update(self.logic)
+                        self.logic.update_game_state(self.logic.turn)
                         if self.logic.state != "game_on":
                             game_on = False  # on arrete la boucle du jeu
 
@@ -125,6 +125,7 @@ class Game:
                         the_list[0] = None
                         hasTothink = True
                         self.logic.real_move(*genius_move[1])
+                        self.logic.update_game_state(self.logic.turn)
                         self.board.update(self.logic)
                         if self.logic.state != "game_on":
                             game_on = False  # on arrete la boucle du jeu

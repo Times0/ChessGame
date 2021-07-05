@@ -118,8 +118,8 @@ class Edouard:
                 possible_moves = logic.legal_moves("white")
                 for move in possible_moves:
                     virtual = Logic(data2=logic.get_data())
-                    virtual.move(*move)
-                    evaluation, best_move = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False)
+                    virtual.real_move(*move)
+                    evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False)
                     if evaluation >= max_evaluation:
                         max_evaluation, best_move = evaluation, move
                     alpha = max(alpha, max_evaluation)
@@ -131,8 +131,8 @@ class Edouard:
                 possible_moves = logic.legal_moves("black")
                 for move in possible_moves:
                     virtual = Logic(data2=(logic.get_data()))
-                    virtual.move(*move)
-                    evaluation, best_move = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True)
+                    virtual.real_move(*move)
+                    evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True)
                     if evaluation <= min_evaluation:
                         min_evaluation, best_move = evaluation, move
                     beta = min(beta, min_evaluation)
@@ -150,8 +150,8 @@ class Edouard:
             max_evaluation = -100
             possible_moves = logic.legal_moves("white")
             for move in possible_moves:
-                virtual = Logic(fen=logic.get_fen())
-                virtual.move(*move)
+                virtual = Logic(data2=logic.get_data())
+                virtual.real_move(*move)
                 evaluation, best_move = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False)
                 allevals.append((evaluation, move))
                 if evaluation >= max_evaluation:
@@ -167,7 +167,7 @@ class Edouard:
             possible_moves = logic.legal_moves("black")
             for move in possible_moves:
                 virtual = Logic(data2=(logic.get_data()))
-                virtual.move(*move)
+                virtual.real_move(*move)
                 evaluation, best_move = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True)
                 allevals.append((evaluation, move))
                 if evaluation <= min_evaluation:
