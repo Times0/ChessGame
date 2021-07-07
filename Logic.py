@@ -193,6 +193,12 @@ class Logic:
         i, j = self.king_coord(color)
         return self.board[i][j]
 
+    def isCapture(self, i, j, di, dj):
+        if self.piece_at(di, dj) or self.piece_at(i, j).abreviation.lower() == "p" and j != dj:
+            return True
+        else:
+            return False
+
     def isIncheck(self, color: str) -> bool:
         i, j = self.king_coord(color)
         return (i, j) in self.cases_attacked_by(("white" if color == "black" else "black"))
@@ -210,45 +216,30 @@ class Logic:
         elif self.isStalemate(color):
             self.state = "draw"
 
-    def move(self, i: int, j: int, dest_i, dest_j) -> None:
-        """
-        Moves a piece to a square regardless of rules
-        i,j origin coordinates, dest_i,dest_j destination coordinates
-        :return: None
-        """
-        piece = self.board[i][j]
-        if piece is None:
-            print(i, j)
-            print('no piece here')
-            raise Exception
-
-        self.board[i][j] = None
-        self.board[dest_i][dest_j] = piece
-        self.board[dest_i][dest_j].moved(dest_i, dest_j)
-        self.switch_turn()
-
-    def real_move(self, i: int, j: int, dest_i, dest_j, switch_turn=True) -> None:
-        """move method used when moving on the real board (not in virtual ones, probably a terrible idea btw) switch
-        turn is set to false when moving the rook during castling"""
+    def move(self, i: int, j: int, dest_i, dest_j, switch_turn=True) -> None:
         piece = self.board[i][j]
         if not piece:
             print(f"{i,j=}")
             print(f"{self}")
             raise Exception
         self.mark = []
+
         # special moves
-
         # castle
-        if piece.abreviation.lower() == "k":
+        type = piece.abreviation.lower()
+        if type == "k":
+            self.remove_castle_rights(piece.color)
             if i == 0 and j == 4 and dest_i == 0 and dest_j == 2 and piece.never_moved:
-                self.real_move(0, 0, 0, 3, False)
+                self.move(0, 0, 0, 3, False)
             elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6 and piece.never_moved:
-                self.real_move(0, 7, 0, 5, False)
+                self.move(0, 7, 0, 5, False)
             elif i == 7 and j == 4 and dest_i == 7 and dest_j == 2 and piece.never_moved:
-                self.real_move(7, 0, 7, 3, False)
+                self.move(7, 0, 7, 3, False)
             elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6 and piece.never_moved:
-                self.real_move(7, 7, 7, 5, False)
+                self.move(7, 7, 7, 5, False)
 
+        elif type == "r" and piece.never_moved and self.castle_rights:
+            self.remove_castle_rights(piece.color, j)
         # promotion
         elif piece.abreviation.lower() == "p" and dest_i == (0 if piece.direction == -1 else 7):
             piece = Queen(piece.color, i, j)
@@ -265,8 +256,26 @@ class Logic:
         if switch_turn:
             self.switch_turn()
 
+    def real_move(self, i, j, desti, destj):
+        """Only used in game.py, it is called once per move and not when calculating"""
+        self.move(i, j, desti, destj)
+
     def capture(self, i, j):
         self.board[i][j] = None
+
+    def remove_castle_rights(self, color, j=None) -> None:
+        if not self.castle_rights:
+            return
+        if j == 0:
+            r = "q"
+        elif j == 7:
+            r = "k"
+        else:
+            r = "qk"
+        if color == "white":
+            r = r.upper()
+        for char in r:
+            self.castle_rights = self.castle_rights.replace(char, "")
 
     def switch_turn(self) -> None:
         self.turn = "white" if self.turn == "black" else "black"
@@ -342,7 +351,7 @@ class Piece:
             # print(virtual, "\n\n", virtual2, virtual.turn, virtual2.turn, virtual.isIncheck(color),
             # virtual2.isIncheck(color))
 
-            virtual.real_move(self.i, self.j, *move)
+            virtual.move(self.i, self.j, *move)
             if not virtual.isIncheck(self.color):
                 # print(f"Not in check with the move {move}")
                 returnlist.append(move)
@@ -512,11 +521,10 @@ class King(Piece):
                 returnlist.append((i1, j1))
 
         castle_rights = board.castle_rights
-
         if self.color == "white":
-            rights = str([char for char in castle_rights if char.lower() == char])
-        else:
             rights = str([char for char in castle_rights if char.upper() == char])
+        else:
+            rights = str([char for char in castle_rights if char.lower() == char])
         if rights:
             i, j = (0, 4) if self.color == "black" else (7, 4)
             if "k" in rights.lower():
