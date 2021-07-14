@@ -34,66 +34,86 @@ class Edouard:
             return choice(possible_moves)
 
     def play_well(self, logic):
-        return self.minmax_alpha_beta_root(logic, 3, -100, 100, True if self.color == "white" else False)
+        return self.minmax_alpha_beta_root(logic, 2, -1000, 1000, True if self.color == "white" else False)
 
     # minimax with pruning (better)
-    def minmax_alpha_beta(self, logic, depth, alpha, beta, maximizing, capture: bool):
+    def minmax_alpha_beta(self, logic, depth, alpha, beta, maximizing, force_continue: bool, magic=False):
         color = "white" if maximizing else "black"
-        if logic.isIncheck(color) or logic.nb_pieces_on_board() < 5:
-            logic.update_game_state(color)
 
+        logic.update_game_state(color)
+        if magic:
+            print(f"Here is the board after the bad queen move : \n {logic} \n {logic.state=}\n {maximizing=} \n\n")
         if logic.state == "whitewins":
             return 1000, None
         elif logic.state == "blackwins":
             return -1000, None
         elif logic.state == "draw":
             return 0, None
-        if depth <= 0 and not capture:
+        if depth <= 0 and not force_continue or depth < -3:
             return logic.get_static_eval(), None
         else:
             best_move = None
             if maximizing:
-                max_evaluation = -100
+                max_evaluation = -1000
                 possible_moves = logic.legal_moves("white")
                 for move in possible_moves:
-                    virtual = Logic(data2=logic.get_data())
+                    virtual = Logic(fen=logic.get_fen())
                     isCapture = virtual.isCapture(*move)
+
+                    f_continue = False
+                    if isCapture:
+                        f_continue = True
+
                     virtual.move(*move)
-                    evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False, isCapture)
+
+                    evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False, f_continue)
                     if evaluation >= max_evaluation:
                         max_evaluation, best_move = evaluation, move
                     alpha = max(alpha, max_evaluation)
                     if alpha >= beta:
+                        max_evaluation += 0.01
                         break
                 return max_evaluation, best_move
             else:
-                min_evaluation = 100
+                min_evaluation = 1000
                 possible_moves = logic.legal_moves("black")
+                if magic:
+                    print(f"{possible_moves=}")
                 for move in possible_moves:
-                    virtual = Logic(data2=(logic.get_data()))
+                    virtual = Logic(fen=logic.get_fen())
                     isCapture = virtual.isCapture(*move)
+
+                    f_continue = False
+                    if isCapture:
+                        f_continue = True
+
                     virtual.move(*move)
-                    evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True, isCapture)
+
+                    evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True, f_continue)
                     if evaluation <= min_evaluation:
                         min_evaluation, best_move = evaluation, move
+
+                    if magic:
+                        print(f"{move=}  {evaluation=}  {min_evaluation=}")
                     beta = min(beta, min_evaluation)
+
                     if alpha >= beta:
+                        min_evaluation -= 0.01
                         break
+
                 return min_evaluation, best_move
 
     def minmax_alpha_beta_root(self, logic, depth, alpha, beta, maximizing):
-        # print(f'maximizing : {maximizing}')
-        # print(f"algo2, depth : {depth}")
-
-        # game pas terminée
         allevals = []
         if maximizing:
-            max_evaluation = -100
-            possible_moves = logic.legal_moves("white")
+            max_evaluation = -1000
+            possible_moves = logic.ordered_legal_moves("white")
             for move in possible_moves:
-                virtual = Logic(data2=logic.get_data())
+                virtual = Logic(fen=logic.get_fen())
                 virtual.move(*move)
-                evaluation, best_move = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False, True)
+
+                evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False, True)
+
                 allevals.append((evaluation, move))
                 if evaluation >= max_evaluation:
                     max_evaluation, best_move = evaluation, move
@@ -104,10 +124,10 @@ class Edouard:
             all_best_eval_moves = [i for i in allevals if i[0] == max_evaluation]
             return choice(all_best_eval_moves)
         else:
-            min_evaluation = 100
-            possible_moves = logic.legal_moves("black")
+            min_evaluation = 1000
+            possible_moves = logic.ordered_legal_moves("black")
             for move in possible_moves:
-                virtual = Logic(data2=(logic.get_data()))
+                virtual = Logic(fen=logic.get_fen())
                 virtual.move(*move)
                 evaluation, best_move = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True, True)
                 allevals.append((evaluation, move))

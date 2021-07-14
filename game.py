@@ -13,8 +13,10 @@ class Game:
         self.logic = Logic(fen=fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
-        self.players = {"white": "human", "black": "bot"}  # MODIFY HERE
-        self.bots = {"white": bot.Edouard("white"), "black": bot.Edouard("black")}
+        self.players = {"white": "bot", "black": "bot"}  # MODIFY HERE
+        botw = bot.Edouard("white")
+        botb = bot.Edouard("black")
+        self.bots = {"white": botw, "black": botb}
         self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X")]
 
     def run(self):
@@ -100,7 +102,7 @@ class Game:
                     if _move_info:
                         self.logic.real_move(*actual_move)
                         self.board.update(self.logic)
-                        self.logic.update_game_state(self.logic.turn)
+                        # self.logic.update_game_state(self.logic.turn)
                         if self.logic.state != "game_on":
                             game_on = False  # on arrete la boucle du jeu
 
@@ -110,10 +112,10 @@ class Game:
 
                         # find what took time
                         # with cProfile.Profile() as pr:
-                        #   self.bots[self.logic.turn].play(self.logic, the_list)
-                        # stats = pstats.Stats(pr)
-                        # stats.sort_stats(pstats.SortKey.TIME)
-                        # stats.print_stats()
+                        #    self.bots[self.logic.turn].play(self.logic, the_list)
+                        #    stats = pstats.Stats(pr)
+                        #    stats.sort_stats(pstats.SortKey.TIME)
+                        #    stats.print_stats()
 
                         bot_process = multiprocessing.Process(target=self.bots[self.logic.turn].play,
                                                               args=(self.logic, the_list))
@@ -125,7 +127,7 @@ class Game:
                         the_list[0] = None
                         hasTothink = True
                         self.logic.real_move(*genius_move[1])
-                        self.logic.update_game_state(self.logic.turn)
+                        # self.logic.update_game_state(self.logic.turn)
                         self.board.update(self.logic)
                         if self.logic.state != "game_on":
                             game_on = False  # on arrete la boucle du jeu

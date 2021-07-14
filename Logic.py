@@ -1,34 +1,25 @@
-from copy import deepcopy
 from itertools import product
+from random import shuffle
 
 import numpy as np
-from numpy import matrix
+from numpy import matrix, ndarray, sqrt
 
 from fonctions import isInbounds, other_color
+
+format = "KQkq"
 
 
 class Logic:
     """ a Logic instance is an independant chess board that has every fonction needed to play the game like isMate(
     color) or cases_attacked_by(color) and attributes such as turn, state, castle_rights etc"""
 
-    def __init__(self, data=None, fen=None, data2=None):
-        """
+    def __init__(self, fen=None, data=None):
+        if isinstance(data, type(None)):
+            data = np.array(None)
 
-        :param data: de la forme : board, castle_rights
-        :param fen:
-        """
-        if isinstance(data2, type(None)):
-            data2 = np.array(None)
-
-        if data:
-            self.board = data[0]
-            self.castle_rights = data[1]
-            self.turn = data[2]
-
-        elif data2.size > 1:
+        if data.size > 1:
             self.board = list()
-            self.load_data(data2)
-            self.castle_rights = ""
+            self.load_data(data)
 
         elif fen:
             # variables pour les privilèges de roquer
@@ -103,12 +94,10 @@ class Logic:
         returnfen = " ".join([board, turn, castle_rights])
         return returnfen
 
-    def data(self):
-        newboard = deepcopy(self.board)
-        return newboard, self.castle_rights, self.turn
+    def castle_rights_bit(self) -> ndarray:
 
-    def castle_rights_bit(self):
-        return [0 for char in self.castle_rights if 1]
+        cr = self.castle_rights
+        return np.array([1 if char in cr else 0 for char in format])
 
     def get_data(self):
         L = np.array(
@@ -117,9 +106,12 @@ class Logic:
              else self.board[i][j].value + 10 if self.board[i][j] else 0 for i in range(8) for j in range(8)],
             dtype=np.int8)
         L = np.append(L, (1 if self.turn == "white" else 0))
+        cr = self.castle_rights_bit()
+        L = np.concatenate((L, cr))
         return L
 
     def load_data(self, data):
+
         # print("\n\nSTART ")
 
         L = list()
@@ -137,6 +129,7 @@ class Logic:
                     L[i][j].set_coord_weird(i, j)
         self.board = L
         self.turn = "white" if data[64] == 1 else "black"
+        self.castle_rights = "".join([format[i] if data[65 + i] else "" for i in range(4)])
 
     def check(self):
         for i in range(8):
@@ -172,6 +165,11 @@ class Logic:
                         for legal in legals:
                             returnlist.append((i, j, *legal))
         return returnlist
+
+    def ordered_legal_moves(self, color):
+        lm = self.legal_moves(color)
+        shuffle(lm)
+        return lm
 
     def hasLegalmoves(self, color):
         for i in range(8):
@@ -229,13 +227,13 @@ class Logic:
         type = piece.abreviation.lower()
         if type == "k":
             self.remove_castle_rights(piece.color)
-            if i == 0 and j == 4 and dest_i == 0 and dest_j == 2 and piece.never_moved:
+            if i == 0 and j == 4 and dest_i == 0 and dest_j == 2:
                 self.move(0, 0, 0, 3, False)
-            elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6 and piece.never_moved:
+            elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6:
                 self.move(0, 7, 0, 5, False)
-            elif i == 7 and j == 4 and dest_i == 7 and dest_j == 2 and piece.never_moved:
+            elif i == 7 and j == 4 and dest_i == 7 and dest_j == 2:
                 self.move(7, 0, 7, 3, False)
-            elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6 and piece.never_moved:
+            elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6:
                 self.move(7, 7, 7, 5, False)
 
         elif type == "r" and piece.never_moved and self.castle_rights:
@@ -245,9 +243,9 @@ class Logic:
             piece = Queen(piece.color, i, j)
 
         # en passant
-        elif piece.abreviation.lower() == "p" and dest_i == i + 2 * piece.direction:
+        elif type == "p" and dest_i == i + 2 * piece.direction:
             self.mark = [(i + piece.direction, j)]
-        elif piece.abreviation.lower() == 'p' and j != dest_j and not self.piece_at(dest_i, dest_j):
+        elif type == 'p' and j != dest_j and not self.piece_at(dest_i, dest_j):
             self.capture(i, dest_j)
 
         self.board[i][j] = None
@@ -259,6 +257,7 @@ class Logic:
     def real_move(self, i, j, desti, destj):
         """Only used in game.py, it is called once per move and not when calculating"""
         self.move(i, j, desti, destj)
+        self.update_game_state(self.turn)
 
     def capture(self, i, j):
         self.board[i][j] = None
@@ -297,9 +296,28 @@ class Logic:
         if self.nb_pieces_on_board() >= 4:
             return simple_eval
 
-        i, j = self.king_coord("black")
+        if simple_eval < -5:
+            loser = "white"
+        elif simple_eval > 5:
+            loser = "black"
+        else:
+            loser = "white"
+        i, j = self.king_coord(loser)
+
         center_penality = (abs(3 - i) * abs(3 + j)) / 16
-        return simple_eval + center_penality
+        k_distancep = self.distance_between_kings() // 16
+
+        if loser == "white":
+            return simple_eval - center_penality - k_distancep
+        elif loser == "black":
+            return simple_eval + center_penality + k_distancep
+        else:
+            return simple_eval
+
+    def distance_between_kings(self):
+        bk = self.king("black")
+        wk = self.king("white")
+        return sqrt((bk.i - wk.i) ** 2 + (bk.i - wk.i) ** 2)
 
     def nb_pieces_on_board(self):
         return len([0 for i in range(8) for j in range(8) if self.board[i][j]])
@@ -345,15 +363,9 @@ class Piece:
         if self.color != logic.turn:
             return []
         for move in self.almost_legal_moves(logic):
-            virtual = Logic(data2=logic.get_data())
-            # virtual2 = Logic(data=logic.data())
-            # color = virtual2.turn
-            # print(virtual, "\n\n", virtual2, virtual.turn, virtual2.turn, virtual.isIncheck(color),
-            # virtual2.isIncheck(color))
-
+            virtual = Logic(fen=logic.get_fen())
             virtual.move(self.i, self.j, *move)
             if not virtual.isIncheck(self.color):
-                # print(f"Not in check with the move {move}")
                 returnlist.append(move)
         return returnlist
 
@@ -531,13 +543,13 @@ class King(Piece):
                 if not piece_at(i, j + 1) and not piece_at(i, j + 2):
                     attacked_cases = board.cases_attacked_by(other_color(self.color))
                     if (i, j) not in attacked_cases and (i, j + 1) not in attacked_cases and (
-                            i, j + 2) not in attacked_cases:
+                            i, j + 2) not in attacked_cases and piece_at(i, 7):
                         returnlist.append((i, j + 2))
             if "q" in rights.lower():
                 if not piece_at(i, j - 1) and not piece_at(i, j - 2) and not piece_at(i, j - 3):
                     attacked_cases = board.cases_attacked_by(other_color(self.color))
                     if (i, j) not in attacked_cases and (i, j - 1) not in attacked_cases and (
-                            i, j - 2) not in attacked_cases:
+                            i, j - 2) not in attacked_cases and piece_at(i, 0):
                         returnlist.append((i, j - 2))
         return returnlist
 
