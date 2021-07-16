@@ -163,7 +163,7 @@ class Logic:
                     legals = piece.legal_moves(self)
                     if legals:
                         for legal in legals:
-                            returnlist.append((i, j, *legal))
+                            returnlist.append((i, j, legal[0], legal[1], legal[2]))
         return returnlist
 
     def ordered_legal_moves(self, color):
@@ -191,11 +191,12 @@ class Logic:
         i, j = self.king_coord(color)
         return self.board[i][j]
 
-    def isCapture(self, i, j, di, dj):
-        if self.piece_at(di, dj) or self.piece_at(i, j).abreviation.lower() == "p" and j != dj:
-            return True
-        else:
-            return False
+    @staticmethod
+    def isCapture(move: (int, int, int, int, int)) -> bool:
+        return move[4] == 1
+
+    def isCheck(self, move):
+        return move[4] == 2
 
     def isIncheck(self, color: str) -> bool:
         i, j = self.king_coord(color)
@@ -257,6 +258,7 @@ class Logic:
     def real_move(self, i, j, desti, destj):
         """Only used in game.py, it is called once per move and not when calculating"""
         self.move(i, j, desti, destj)
+
         self.update_game_state(self.turn)
 
     def capture(self, i, j):
@@ -347,7 +349,7 @@ class Piece:
             abreviation = abreviation.upper()
         self.abreviation = abreviation
 
-    def set_coord_weird(self, i, j):
+    def set_coord_weird(self, i, j) -> None:
         self.i, self.j = i, j
 
     def almost_legal_moves(self, board: Logic) -> list:
@@ -355,24 +357,27 @@ class Piece:
         en prenant en compte les autres pièces de l'échequier mais sans prendre en compte les échecs au roi"""
         pass
 
-    def legal_moves(self, logic: Logic) -> list[(int, int)]:
+    def legal_moves(self, logic: Logic) -> list[(int, int, int)]:
         """ Returns the list of every almost legal move this piece has which means it does not care about checks,
-        checks are handled in  legal_moves """
+        checks are handled in  legal_moves
+         Format is (i, j, id) with id being 1 if it is a capture and ((2 if it is a check)) (else 0) """
 
         returnlist = []
         if self.color != logic.turn:
             return []
         for move in self.almost_legal_moves(logic):
             virtual = Logic(fen=logic.get_fen())
-            virtual.move(self.i, self.j, *move)
+            virtual.move(self.i, self.j, move[0], move[1])
             if not virtual.isIncheck(self.color):
+                if move[2] == 0 and virtual.isIncheck(other_color(self.color)):
+                    returnlist.append((move[0], move[1], 2))
                 returnlist.append(move)
         return returnlist
 
-    def attacking_squares(self, board) -> list:
+    def attacking_squares(self, logic) -> list:
         """returns the list of every coordinates this piece is attacking/protecting, it is a bit different from
         almos_legal moves since a protected piece is not attacked """
-        return self.almost_legal_moves(board)
+        return [(e[0], e[1]) for e in self.almost_legal_moves(logic)]
 
     def moved(self, dest_i, dest_j) -> None:
         """Updates the info the piece has about itself"""
@@ -397,27 +402,27 @@ class Pawn(Piece):
         # move devant
         i1 = i + dir  # case devant le pion (relativement)
         if isInbounds(i1, j) and not piece_at(i1, j):
-            returnlist.append((i1, j))
+            returnlist.append((i1, j, 0))
             if self.never_moved:
                 i2 = i1 + dir  # deux cases devant le pion
                 if isInbounds(i2, j) and not piece_at(i2, j):
-                    returnlist.append((i2, j))
+                    returnlist.append((i2, j, 0))
 
         # captures
         for ja in [j - 1, j + 1]:
             if isInbounds(i1, ja) and piece_at(i1, ja) and piece_at(i1, ja).color != self.color:
-                returnlist.append((i1, ja))
+                returnlist.append((i1, ja, 1))
 
         # en croissant
         if i == (3 if self.color == "white" else 4):
             for jb in [j - 1, j + 1]:
                 if isInbounds(i1, jb) and (i1, jb) in board.mark:
-                    returnlist.append((i1, jb))
+                    returnlist.append((i1, jb, 1))
 
         return returnlist
 
-    def attacking_squares(self, board) -> list:
-        piece_at = board.piece_at
+    def attacking_squares(self, logic) -> list:
+        piece_at = logic.piece_at
         i, j = self.i, self.j
         dir = self.direction
         i1 = i + dir
@@ -440,16 +445,16 @@ class Bishop(Piece):
         piece_at = board.piece_at
         returnlist = []
         i, j = self.i, self.j
-        for a, b in [[1, 1], [-1, 1], [1, -1],
-                     [-1, -1]]:  # toutes les permutations de S2 , (ici écrire une liste avec for était bien plus long)
-            for n in range(1, 8 + 1):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
+        for a, b in [[1, 1], [-1, 1], [1, -1], [-1, -1]]:
+            for n in range(1, 7):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
                 i1, j1 = i + a * n, j + b * n
-
                 if isInbounds(i1, j1):
-                    if (not piece_at(i1, j1)) or piece_at(i1, j1).color != self.color:
-                        # déplacement autorisé  ou capture
-                        returnlist.append((i1, j1))
-                    if piece_at(i1, j1):
+                    piece = piece_at(i1, j1)
+                    if not piece:
+                        returnlist.append((i1, j1, 0))
+                    elif piece.color != self.color:
+                        returnlist.append((i1, j1, 1))
+                    if piece:
                         break  # c'est cette ligne qui traduit la rupture de la 'ligne' si une pièce y est présente
         return returnlist
 
@@ -466,13 +471,15 @@ class Rook(Piece):
         returnlist = []
         i, j = self.i, self.j
         for a, b in [[1, 0], [-1, 0], [0, -1], [0, 1]]:
-            for n in range(1, 8 + 1):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
+            for n in range(1, 7):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
                 i1, j1 = i + a * n, j + b * n
                 if isInbounds(i1, j1):
-                    if (not piece_at(i1, j1)) or piece_at(i1,
-                                                          j1).color != self.color:  # déplacement autorisé  ou capture
-                        returnlist.append((i1, j1))
-                    if piece_at(i1, j1):
+                    piece = piece_at(i1, j1)
+                    if not piece:
+                        returnlist.append((i1, j1, 0))
+                    elif piece.color != self.color:
+                        returnlist.append((i1, j1, 1))
+                    if piece:
                         break  # rupture de la 'ligne' si une pièce y est présente
         return returnlist
 
@@ -487,9 +494,18 @@ class Knight(Piece):
     def almost_legal_moves(self, board):
         piece_at = board.piece_at
         i, j = self.i, self.j
+        returnlist = []
         moves = list(product([i - 1, i + 1], [j - 2, j + 2])) + list(product([i - 2, i + 2], [j - 1, j + 1]))
-        return [move for move in moves if
-                isInbounds(*move) and (not piece_at(*move) or piece_at(*move).color != self.color)]
+        # return [move for move in moves if
+        #         isInbounds(*move) and (not piece_at(*move) or piece_at(*move).color != self.color)]
+        for i1, j1 in moves:
+            if isInbounds(i1, j1):
+                piece = piece_at(i1, j1)
+                if not piece:
+                    returnlist.append((i1, j1, 0))
+                elif piece.color != self.color:
+                    returnlist.append((i1, j1, 1))
+        return returnlist
 
 
 class Queen(Piece):
@@ -504,13 +520,15 @@ class Queen(Piece):
         returnlist = []
         i, j = self.i, self.j
         for a, b in [[1, 0], [-1, 0], [0, -1], [0, 1], [1, 1], [-1, 1], [1, -1], [-1, -1]]:
-            for n in range(1, 8 + 1):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
+            for n in range(1, 7):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
                 i1, j1 = i + a * n, j + b * n
                 if isInbounds(i1, j1):
-                    if (not piece_at(i1, j1)) or piece_at(i1,
-                                                          j1).color != self.color:  # déplacement autorisé  ou capture
-                        returnlist.append((i1, j1))
-                    if piece_at(i1, j1):
+                    piece = piece_at(i1, j1)
+                    if not piece:
+                        returnlist.append((i1, j1, 0))
+                    elif piece.color != self.color:
+                        returnlist.append((i1, j1, 1))
+                    if piece:
                         break  # rupture de la 'ligne' si une pièce y est présente
         return returnlist
 
@@ -529,8 +547,12 @@ class King(Piece):
         i, j = self.i, self.j
         for a, b in [[-1, -1], [-1, 1], [-1, 0], [1, -1], [1, 1], [1, 0], [0, 1], [0, -1]]:
             i1, j1 = i + a, j + b
-            if isInbounds(i1, j1) and (not piece_at(i1, j1) or piece_at(i1, j1).color != self.color):
-                returnlist.append((i1, j1))
+            if isInbounds(i1, j1):
+                piece = piece_at(i1, j1)
+                if not piece:
+                    returnlist.append((i1, j1, 0))
+                elif piece.color != self.color:
+                    returnlist.append((i1, j1, 1))
 
         castle_rights = board.castle_rights
         if self.color == "white":
@@ -544,17 +566,17 @@ class King(Piece):
                     attacked_cases = board.cases_attacked_by(other_color(self.color))
                     if (i, j) not in attacked_cases and (i, j + 1) not in attacked_cases and (
                             i, j + 2) not in attacked_cases and piece_at(i, 7):
-                        returnlist.append((i, j + 2))
+                        returnlist.append((i, j + 2, 0))
             if "q" in rights.lower():
                 if not piece_at(i, j - 1) and not piece_at(i, j - 2) and not piece_at(i, j - 3):
                     attacked_cases = board.cases_attacked_by(other_color(self.color))
                     if (i, j) not in attacked_cases and (i, j - 1) not in attacked_cases and (
                             i, j - 2) not in attacked_cases and piece_at(i, 0):
-                        returnlist.append((i, j - 2))
+                        returnlist.append((i, j - 2, 0))
         return returnlist
 
-    def attacking_squares(self, board):
-        piece_at = board.piece_at
+    def attacking_squares(self, logic):
+        piece_at = logic.piece_at
         returnlist = []
 
         i, j = self.i, self.j

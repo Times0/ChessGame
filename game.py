@@ -58,6 +58,7 @@ class Game:
                         if previous_coord:
                             move = *previous_coord, *self.board.coord_from_pos(*event.pos)
 
+                        legal_moves_reduced = [(e[0], e[1], e[2], e[3]) for e in self.logic.legal_moves()]
                         if self.board.isNotempty(*self.board.coord_from_pos(*event.pos)):
 
                             self.board.set_to_gone(*event.pos)
@@ -67,7 +68,8 @@ class Game:
                             self.board.legal_moves_to_output = moves
 
                         # si on clique sur une case vide qui est un legal move, on effectue le move
-                        elif self.board.legal_moves_to_output and move in self.logic.legal_moves():
+
+                        elif self.board.legal_moves_to_output and move in legal_moves_reduced:
                             _move_info = True
                             actual_move = move
                             self.board.legal_moves_to_output = []
@@ -79,15 +81,15 @@ class Game:
 
                     # si on lache le clique et qu'on draggait
                     elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.board.state == "dragging":
+                        legal_moves_reduced = [(e[0], e[1], e[2], e[3]) for e in self.logic.legal_moves()]
                         previous_coord = self.board.clicked_piece_coord
                         if previous_coord:
                             move = *previous_coord, *self.board.coord_from_pos(*event.pos)
-                        previous_coord = self.board.dragged_piece_coord
+
                         # on effectue le move
-                        if move in self.logic.legal_moves():
+                        if move in legal_moves_reduced:
                             _move_info = True
                             actual_move = move
-
                             self.board.set_to_not_gone()
                             self.board.legal_moves_to_output = []
                         else:
@@ -126,7 +128,8 @@ class Game:
                         genius_move = the_list[0]
                         the_list[0] = None
                         hasTothink = True
-                        self.logic.real_move(*genius_move[1])
+                        a, b, c, d, _ = genius_move[1]
+                        self.logic.real_move(a, b, c, d)
                         # self.logic.update_game_state(self.logic.turn)
                         self.board.update(self.logic)
                         if self.logic.state != "game_on":
