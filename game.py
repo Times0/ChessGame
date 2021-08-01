@@ -15,12 +15,21 @@ class Game:
         self.logic = Logic(fen=fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
-        self.players = {"white": "bot", "black": "bot"}  # MODIFY HERE
+        self.players = {"white": "human", "black": "human"}  # MODIFY HERE
         botw = bot.Edouard("white")
         botb = bot.Edouard("black")
         self.bots = {"white": botw, "black": botb}
-        self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.9, 15, 40, 40, pygame.quit, "X"),
-                        Button.Button(BLACK, GREY, 15, HEIGHT * 0.9, 120, 40, self.restart, "Restart")]
+        self.playertextlabel = {"white": f'White : {self.players["white"]}',
+                                "black": f'Black : {self.players["black"]}'}
+
+        self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.95, 15, 40, 40, pygame.quit, "X"),
+                        Button.Button(BLACK, BLACK, 15, MIDH, 150, 40, lambda: self.swap("white"),
+                                      self.playertextlabel['white'], textcolor=WHITE),
+                        Button.Button(BLACK, BLACK, 15, MIDH + 50, 150, 40, lambda: self.swap("black"),
+                                      self.playertextlabel['black'], textcolor=WHITE),
+                        Button.Button(BLACK, GREY, 15, HEIGHT * 0.9, 120, 40, self.restart, "Restart")
+
+                        ]
 
         # multiprocessing
         manager = multiprocessing.Manager()
@@ -151,7 +160,6 @@ class Game:
 
             self.draw_everything()
             pygame.display.flip()  # update l'affichage
-
         pygame.quit()
 
     def draw_everything(self):
@@ -162,8 +170,8 @@ class Game:
 
     def draw_labels(self):
         font = pygame.font.SysFont("monospace", 25)
-        label_state = font.render(f"game state : {self.logic.state}", True, WHITE)
-        label_turn = font.render(f"turn : {self.logic.turn}", True, WHITE)
+        label_state = font.render(f"Game state : {self.logic.state}", True, WHITE)
+        label_turn = font.render(f"Turn : {self.logic.turn}", True, WHITE)
         self.win.blit(label_state, (15, HEIGHT * 0.1))
         self.win.blit(label_turn, (15, HEIGHT * 0.1 + HEIGHT // 15))
 
@@ -174,3 +182,8 @@ class Game:
             pass
 
         self.__init__(self.win, STARTINGPOSFEN)
+
+    def swap(self, color):
+        yes = "human" if self.players[color] == "bot" else "bot"
+        self.players[color] = yes
+        self.buttons[1 if color == "white" else 2].text = f"{color} : {yes}"
