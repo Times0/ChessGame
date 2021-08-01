@@ -6,7 +6,7 @@ from numpy import matrix, ndarray, sqrt
 
 from fonctions import isInbounds, other_color
 
-format = "KQkq"
+format_cr = "KQkq"
 
 
 class Logic:
@@ -97,7 +97,7 @@ class Logic:
     def castle_rights_bit(self) -> ndarray:
 
         cr = self.castle_rights
-        return np.array([1 if char in cr else 0 for char in format])
+        return np.array([1 if char in cr else 0 for char in format_cr])
 
     def get_data(self):
         L = np.array(
@@ -129,7 +129,7 @@ class Logic:
                     L[i][j].set_coord_weird(i, j)
         self.board = L
         self.turn = "white" if data[64] == 1 else "black"
-        self.castle_rights = "".join([format[i] if data[65 + i] else "" for i in range(4)])
+        self.castle_rights = "".join([format_cr[i] if data[65 + i] else "" for i in range(4)])
 
     def check(self):
         for i in range(8):
@@ -169,6 +169,7 @@ class Logic:
     def ordered_legal_moves(self, color):
         lm = self.legal_moves(color)
         shuffle(lm)
+        lm.sort(key=lambda tup: tup[4], reverse=True)
         return lm
 
     def hasLegalmoves(self, color):
@@ -184,8 +185,7 @@ class Logic:
         for i in range(8):
             for j in range(8):
                 if self.piece_at(i, j) and self.board[i][j].abreviation == ("K" if color == "white" else "k"):
-                    king_i, king_j = i, j
-                    return king_i, king_j
+                    return i, j
 
     def king(self, color: str):
         i, j = self.king_coord(color)
@@ -195,7 +195,8 @@ class Logic:
     def isCapture(move: (int, int, int, int, int)) -> bool:
         return move[4] == 1
 
-    def isCheck(self, move):
+    @staticmethod
+    def isCheck(move):
         return move[4] == 2
 
     def isIncheck(self, color: str) -> bool:
@@ -215,7 +216,8 @@ class Logic:
         elif self.isStalemate(color):
             self.state = "draw"
 
-    def move(self, i: int, j: int, dest_i, dest_j, switch_turn=True) -> None:
+    def move(self, move, switch_turn=True) -> None:
+        i, j, dest_i, dest_j, _ = move
         piece = self.board[i][j]
         if not piece:
             print(f"{i,j=}")
@@ -229,13 +231,13 @@ class Logic:
         if type == "k":
             self.remove_castle_rights(piece.color)
             if i == 0 and j == 4 and dest_i == 0 and dest_j == 2:
-                self.move(0, 0, 0, 3, False)
+                self.move((0, 0, 0, 3, 0), False)
             elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6:
-                self.move(0, 7, 0, 5, False)
+                self.move((0, 7, 0, 5, 0), False)
             elif i == 7 and j == 4 and dest_i == 7 and dest_j == 2:
-                self.move(7, 0, 7, 3, False)
+                self.move((7, 0, 7, 3, 0), False)
             elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6:
-                self.move(7, 7, 7, 5, False)
+                self.move((7, 7, 7, 5, 0), False)
 
         elif type == "r" and piece.never_moved and self.castle_rights:
             self.remove_castle_rights(piece.color, j)
@@ -255,10 +257,9 @@ class Logic:
         if switch_turn:
             self.switch_turn()
 
-    def real_move(self, i, j, desti, destj):
+    def real_move(self, move):
         """Only used in game.py, it is called once per move and not when calculating"""
-        self.move(i, j, desti, destj)
-
+        self.move(move)
         self.update_game_state(self.turn)
 
     def capture(self, i, j):
@@ -304,15 +305,14 @@ class Logic:
             loser = "black"
         else:
             loser = "white"
-        i, j = self.king_coord(loser)
 
-        center_penality = (abs(3 - i) * abs(3 + j)) / 16
-        k_distancep = self.distance_between_kings() // 16
+        c_distance = self.distance_center_king(loser)
+        k_distance = self.distance_between_kings()
 
         if loser == "white":
-            return simple_eval - center_penality - k_distancep
+            return simple_eval - c_distance + k_distance
         elif loser == "black":
-            return simple_eval + center_penality + k_distancep
+            return simple_eval + c_distance - k_distance
         else:
             return simple_eval
 
@@ -320,6 +320,10 @@ class Logic:
         bk = self.king("black")
         wk = self.king("white")
         return sqrt((bk.i - wk.i) ** 2 + (bk.i - wk.i) ** 2)
+
+    def distance_center_king(self, color):
+        i, j = self.king_coord(color)
+        return sqrt((i - 3) ** 2 + (j - 3) ** 2)
 
     def nb_pieces_on_board(self):
         return len([0 for i in range(8) for j in range(8) if self.board[i][j]])
@@ -367,11 +371,14 @@ class Piece:
             return []
         for move in self.almost_legal_moves(logic):
             virtual = Logic(fen=logic.get_fen())
-            virtual.move(self.i, self.j, move[0], move[1])
+            true_move = self.i, self.j, *move
+            virtual.move(true_move)
             if not virtual.isIncheck(self.color):
-                if move[2] == 0 and virtual.isIncheck(other_color(self.color)):
+                if virtual.isIncheck(other_color(self.color)):
                     returnlist.append((move[0], move[1], 2))
-                returnlist.append(move)
+                else:
+                    returnlist.append(move)
+
         return returnlist
 
     def attacking_squares(self, logic) -> list:
@@ -446,7 +453,7 @@ class Bishop(Piece):
         returnlist = []
         i, j = self.i, self.j
         for a, b in [[1, 1], [-1, 1], [1, -1], [-1, -1]]:
-            for n in range(1, 7):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
+            for n in range(1, 8):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
                 i1, j1 = i + a * n, j + b * n
                 if isInbounds(i1, j1):
                     piece = piece_at(i1, j1)
@@ -471,7 +478,7 @@ class Rook(Piece):
         returnlist = []
         i, j = self.i, self.j
         for a, b in [[1, 0], [-1, 0], [0, -1], [0, 1]]:
-            for n in range(1, 7):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
+            for n in range(1, 8):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
                 i1, j1 = i + a * n, j + b * n
                 if isInbounds(i1, j1):
                     piece = piece_at(i1, j1)
@@ -520,7 +527,7 @@ class Queen(Piece):
         returnlist = []
         i, j = self.i, self.j
         for a, b in [[1, 0], [-1, 0], [0, -1], [0, 1], [1, 1], [-1, 1], [1, -1], [-1, -1]]:
-            for n in range(1, 7):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
+            for n in range(1, 8):  # on ne teste pas la case sur laquelle il y a déjà notre pièce
                 i1, j1 = i + a * n, j + b * n
                 if isInbounds(i1, j1):
                     piece = piece_at(i1, j1)
@@ -593,9 +600,4 @@ values = {"p": 1, "r": 5, "b": 3, "n": 3, "q": 9, "k": 0}
 
 
 def piece_from_abreviation(abreviation, i, j):
-    if abreviation.lower() == abreviation:
-        color = "black"
-    else:
-        color = "white"
-
-    return dico[abreviation.lower()](color, i, j)
+    return dico[abreviation.lower()]("black" if abreviation.lower() == abreviation else "white", i, j)

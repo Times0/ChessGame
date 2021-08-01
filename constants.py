@@ -63,3 +63,5 @@ fenmate2 = ["6rk/pp3prp/4bQ1R/8/3p4/1PP2N1P/1P2q3/6RK w - - 0 29",
 fenmate3 = ["6B1/p1Q4p/2P2ppk/8/4P3/4qP2/1r4rP/2R2R1K b - - 3 29"]
 
 testmate = "8/8/8/4k3/8/8/3Q4/2K5 w - - 0 1"
+
+fen_pb = "r1bqkbnr/ppp2pp1/2n5/3p3p/2B1Pp2/5N2/PPPP2PP/RNBQR1K1 w kq - 0 7"
