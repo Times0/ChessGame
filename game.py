@@ -19,8 +19,8 @@ class Game:
         botw = bot.Edouard("white")
         botb = bot.Edouard("black")
         self.bots = {"white": botw, "black": botb}
-        self.playertextlabel = {"white": f'White : {self.players["white"]}',
-                                "black": f'Black : {self.players["black"]}'}
+        self.playertextlabel = {"white": f'white : {self.players["white"]}',
+                                "black": f'black : {self.players["black"]}'}
 
         self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.95, 15, 40, 40, pygame.quit, "X"),
                         Button.Button(BLACK, BLACK, 15, MIDH, 150, 40, lambda: self.swap("white"),
