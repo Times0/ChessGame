@@ -27,7 +27,7 @@ class Game:
                                       self.playertextlabel['white'], textcolor=WHITE),
                         Button.Button(BLACK, BLACK, 15, MIDH + 50, 150, 40, lambda: self.swap("black"),
                                       self.playertextlabel['black'], textcolor=WHITE),
-                        Button.Button(BLACK, GREY, 15, HEIGHT * 0.9, 120, 40, self.restart, "Restart")
+                        Button.Button(BLACK, GREY, 15, HEIGHT * 0.9, 180, 40, self.restart, "New game")
 
                         ]
 
