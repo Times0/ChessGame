@@ -1,9 +1,10 @@
 import pygame
+
 from constants import *
 
 
 class Button:
-    def __init__(self, defaultcolor, hovercolor, x, y, width, height, onclick, text):
+    def __init__(self, defaultcolor, hovercolor, x, y, width, height, onclick, text, textcolor=RED):
         self.defaultcolor = defaultcolor
         self.hovercolor = hovercolor
         self.color = defaultcolor
@@ -12,9 +13,9 @@ class Button:
         self.width = width
         self.height = height
         self.text = text
-        self.textcolordefault = RED
-        self.textcolor = RED
-        self.textcolorhover = RED
+        self.textcolordefault = textcolor
+        self.textcolor = textcolor
+        self.textcolorhover = textcolor
         self.onclick = onclick
 
     def draw(self, win, outline=None):
