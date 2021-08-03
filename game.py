@@ -40,8 +40,10 @@ class Game:
         # bot
         self.hasToThink = True
 
+        # game
+        self.game_on = True
+
     def run(self):
-        game_on = True
         win_running = True
         _move_info = False
         clock = pygame.time.Clock()
@@ -52,7 +54,7 @@ class Game:
             # gestion des évènements
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:  # si on appuie sur la croix
-                    game_on = False
+                    self.game_on = False
                 # buttons
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     for button in self.buttons:
@@ -119,14 +121,14 @@ class Game:
                     elif self.board.state == "dragging" and event.type == pygame.MOUSEMOTION:
                         self.board.dragged_piece_pos = event.pos
 
-            if game_on:
+            if self.game_on:
                 if self.players[self.logic.turn] == "human":
                     if _move_info:
                         self.logic.real_move(actual_move)
                         self.board.update(self.logic)
                         self.board.attacked_cases = self.logic.cases_attacked_by('white')
                         if self.logic.state != "game_on":
-                            game_on = False  # on arrete la boucle du jeu
+                            self.game_on = False  # on arrete la boucle du jeu
 
                 elif self.players[self.logic.turn] == "bot":
                     if self.hasToThink:
@@ -154,7 +156,7 @@ class Game:
                         # self.logic.update_game_state(self.logic.turn)
                         self.board.update(self.logic)
                         if self.logic.state != "game_on":
-                            game_on = False  # on arrete la boucle du jeu
+                            self.game_on = False  # on arrete la boucle du jeu
             _move_info = False
             actual_move = None
 
