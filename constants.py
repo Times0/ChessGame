@@ -1,10 +1,4 @@
 from pygame import image
-from screeninfo import get_monitors
-
-main = get_monitors()[0]
-for m in get_monitors()[1:]:
-    if m.width > main.width:
-        main = m
 
 # Colors
 BLACK = 0, 0, 0
@@ -21,7 +15,7 @@ CASECOLOR1 = BROWN
 CASECOLOR2 = LIGHTBEIGE
 
 # Sizes
-WIDTH, HEIGHT = main.width, main.height
+WIDTH, HEIGHT = 1200, 800
 MIDW = WIDTH // 2
 MIDH = HEIGHT // 2
 BOARDSIZE = HEIGHT * 0.8
