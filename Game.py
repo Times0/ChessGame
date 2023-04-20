@@ -1,5 +1,5 @@
 import Button
-from Board_ui import *
+from Board_ui import Board, get_x_y_w_h,pygame
 from Logic import Logic, Color
 from constants import *
 
@@ -49,7 +49,7 @@ class Game:
 
     def draw(self):
         self.win.fill(BLACK)
-        self.board.draw(self.win, self.current_piece_legal_moves, *BOARDTOPLEFTPOS)
+        self.board.draw(self.win, self.current_piece_legal_moves, *get_x_y_w_h())
         pygame.display.flip()
 
     def select(self, pos):
