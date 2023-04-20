@@ -5,15 +5,16 @@ from typing import Tuple
 
 from fonctions import isInbounds
 
+PADDING_WIDTH = 150
+PADDING_HEIGHT = 10
+
 
 def get_x_y_w_h():
     W, H = pygame.display.get_surface().get_size()
-    m = min(W, H)
-    w = m
-    h = m
-    x = (W - w) // 2
-    y = (H - w) // 2
-    return x, y, w, h
+    m = min(W - 2 * PADDING_WIDTH, H - 2 * PADDING_HEIGHT)
+    x = (W - m) // 2
+    y = (H - m) // 2
+    return x, y, m, m
 
 
 def coord_from_pos(coord_x, coord_y) -> Tuple[int, int]:

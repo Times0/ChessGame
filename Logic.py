@@ -32,10 +32,9 @@ class Logic:
             self.load_fen(fen)
         else:
             raise ArithmeticError
-        self.mark = list()  # en passant
-
+        self.mark = list()
+        self.fen = fen
         self.state = State.GAMEON
-        self.fen = self.get_fen()
 
     def load_fen(self, fen) -> None:
         board = []

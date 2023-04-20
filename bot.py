@@ -1,7 +1,7 @@
 import time
 from random import choice
 
-from Logic import Logic
+from Logic import Logic, Color, State
 
 "https://youtu.be/l-hh51ncgDI"
 
@@ -29,16 +29,16 @@ class Edouard:
 
     # minimax with pruning (faster)
     def minmax_alpha_beta(self, logic, depth, alpha, beta, maximizing, force_continue: bool, debug=False):
-        color = "white" if maximizing else "black"
+        color = "white" if maximizing else Color.BLACK
 
         logic.update_game_state(color)
         if debug:
             print(f"Here is the board after the move : \n {logic} \n {logic.state=}\n {maximizing=} \n\n")
-        if logic.state == "whitewins":
+        if logic.state == State.WHITEWINS:
             return 1000, None
-        elif logic.state == "blackwins":
+        elif logic.state == State.BLACKWINS:
             return -1000, None
-        elif logic.state == "draw":
+        elif logic.state == State.DRAW:
             return 0, None
         if (depth <= 0 and not force_continue) or depth < -2:
             return logic.get_static_eval(), None
@@ -66,7 +66,7 @@ class Edouard:
                 return max_evaluation, best_move
             else:
                 min_evaluation = 1000
-                possible_moves = logic.ordered_legal_moves("black")
+                possible_moves = logic.ordered_legal_moves(Color.BLACK)
                 if debug:
                     print(f"{possible_moves=}")
                 for move in possible_moves:
@@ -96,7 +96,7 @@ class Edouard:
         allevals = []
         if maximizing:
             max_evaluation = -1000
-            possible_moves = logic.ordered_legal_moves("white")
+            possible_moves = logic.ordered_legal_moves(Color.WHITE)
             for move in possible_moves:
                 virtual = Logic(fen=logic.get_fen())
 
@@ -121,7 +121,7 @@ class Edouard:
             return choice(all_best_eval_moves)
         else:
             min_evaluation = 1000
-            possible_moves = logic.ordered_legal_moves("black")
+            possible_moves = logic.ordered_legal_moves(Color.BLACK)
             for move in possible_moves:
                 virtual = Logic(fen=logic.get_fen())
 
