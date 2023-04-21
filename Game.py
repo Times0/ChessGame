@@ -15,11 +15,11 @@ class Game:
         self.current_piece_legal_moves = []
         self.game_on = True
 
-
         # Buttons
         self.buttons = []
         self.btn_new_game = TextButton("New Game", 10, 50, pygame.font.SysFont("Arial", 32), WHITE)
-        self.buttons.append(self.btn_new_game)
+        self.btn_flip_board = TextButton("Flip Board", 10, 100, pygame.font.SysFont("Arial", 32), WHITE)
+        self.buttons.extend((self.btn_new_game, self.btn_flip_board))
 
     def run(self):
         clock = pygame.time.Clock()
@@ -39,8 +39,7 @@ class Game:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 pos = pygame.mouse.get_pos()
                 if self.board.clicked(pos):
-                    l = self.logic.get_legal_moves_piece(*self.board.clicked_piece_coord)
-                    self.current_piece_legal_moves = l
+                    self.current_piece_legal_moves = self.logic.get_legal_moves_piece(*self.board.clicked_piece_coord)
 
             if self.board.dragging:
                 if event.type == pygame.MOUSEMOTION:
@@ -64,6 +63,8 @@ class Game:
                     self.logic = Logic(STARTINGPOSFEN)
                     self.board.update(self.logic)
                     self.current_piece_legal_moves = []
+                if self.btn_flip_board.tick():
+                    self.board.flip_board()
 
     def draw(self):
         self.win.fill(BLACK)
