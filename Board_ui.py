@@ -1,5 +1,6 @@
 import pygame
 import Logic
+from Logic import Color, Square
 from constants import *
 from typing import Tuple
 
@@ -31,19 +32,12 @@ def coord_from_pos(coord_x, coord_y) -> Tuple[int, int]:
 class Board:
     def __init__(self, size):
         self.size = size
-        self.case_size = int(self.size // 8)
-        self.x = 0  # coordonnées en pixel par rapport à la fenetre
-        self.y = 0
-        self.board_to_output = [[None for _ in range(8)] for _ in range(8)]
-        boardstates = ["idle", "dragging"]
-        self.state = "idle"
 
-        self.clicked_piece_coord = None
+        self.board_to_output = [[None for _ in range(8)] for _ in range(8)]
+
         self.dragged_piece = None
         self.dragged_piece_coord = None  # i,j
-        self.dragged_piece_pos = 0, 0
         self.dragging = False
-
         self.flipped = False
 
     def set_to_gone(self, i, j):
@@ -56,8 +50,9 @@ class Board:
 
     def f(self, i, j):
         if self.flipped:
-            return 7 - i, 7 - j
-        return i, j
+            return i, 7-j
+        else:
+            return 7 - i, j
 
     def set_to_not_gone(self):
         i, j = self.clicked_piece_coord
@@ -76,7 +71,7 @@ class Board:
     def update(self, logic: Logic):
         for i in range(8):
             for j in range(8):
-                self.set_piece(i, j, logic.piece_at(i, j))
+                self.set_piece(i, j, logic.get_piece(Square(i, j)))
 
     def set_piece(self, i, j, piece):
         self.board_to_output[i][j] = piece
@@ -92,11 +87,11 @@ class Board:
             return True
         return False
 
-    def drag(self, pos):
+    def drag(self, pos) -> None:
         """Called only when a piece is already being dragged"""
         self.dragged_piece_pos = pos
 
-    def drop(self, pos):
+    def drop(self, pos) -> Tuple[int, int]:
         """Called when a piece is already being dragged and the mouse is released"""
         i, j = self.f(*coord_from_pos(*pos))
         self.set_to_not_gone()
@@ -127,9 +122,9 @@ class Board:
         case_size = w // 8
         board = self.board_to_output
         for i in range(8):
-            itab = i if not self.flipped else 7 - i
+            itab = 7 - i if not self.flipped else i
             for j in range(8):
-                jtab = j if not self.flipped else 7 - j
+                jtab = j if not self.flipped else 7-j
                 if self.get_piece_at(itab, jtab) == "gone":
                     # self.show()
                     image_p = globals()[f"{self.dragged_piece.abreviation}_image"]
@@ -146,20 +141,7 @@ class Board:
     def draw_dots(self, win, moves, x, y, w, h):
         case_size = w // 8
         for move in moves:
-            i, j, _ = move
+            i, j = move.destination.i, move.destination.j
             i, j = self.f(i, j)
             pygame.draw.circle(win, RED, (x + j * case_size + case_size // 2, y + i * case_size + case_size // 2), 5)
 
-    def show(self):
-        print("Board")
-        for i in range(8):
-            for j in range(8):
-                if self.board_to_output[i][j] is None:
-                    print("~", end=" ")
-                elif self.board_to_output[i][j] == "gone":
-                    print("!", end=" ")
-                else:
-                    print(self.board_to_output[i][j].abreviation, end=" ")
-            print()
-
-        print()

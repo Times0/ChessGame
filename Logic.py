@@ -1,9 +1,7 @@
 import numpy as np
 from numpy import ndarray, sqrt
-
+from Pieces import Square, Move, Queen, Color, piece_from_abreviation, other_color
 import enum
-
-from Pieces import Queen, piece_from_abreviation, Color
 
 format_cr = "KQkq"
 
@@ -24,218 +22,201 @@ class Logic:
     color) or cases_attacked_by(color) and attributes such as turn, state, castle_rights etc"""
 
     def __init__(self, fen):
-
-        if fen:
-            # variables pour les privilèges de roquer
-            self.castle_rights = "kqKQ"  # kingside, queenside
-            self.board = [[None for _ in range(8)] for _ in range(8)]
-            self.load_fen(fen)
-        else:
-            raise ArithmeticError
-        self.mark = list()
-        self.fen = fen
+        self.board = np.empty((8, 8), dtype=Piece)
         self.state = State.GAMEON
+        self.turn = Color
+        self.castle_rights = str()
+        self.full_move_number = int()
+        self.half_move_clock = int()
+        self.en_passant_square = str()
+        self.load_fen(fen)
 
     def load_fen(self, fen) -> None:
-        board = []
-        i, j = 0, 0
-        parts = fen.split(" ")
-        # part 1
-        for row in parts[0].split("/"):
-            b_row = []
-            for c in row:
-                if c == " ":
-                    break
-                elif c.isnumeric():
-                    b_row.extend([None] * int(c))
-                    j += int(c)
-                elif c.isalpha():
-                    b_row.append(piece_from_abreviation(c, i, j))
-                    if c.upper() == "P" and i != (1 if b_row[-1].color == Color.BLACK else 6):
-                        b_row[-1].never_moved = False
-                    j += 1
-            board.append(b_row)
-            i += 1
+        """loads a fen into the board"""
+        fen = fen.split(" ")
+        fen_board = fen[0].split("/")
+        for i in range(8):
             j = 0
-        self.fen = fen
-
-        for i, part in enumerate(parts[1:]):
-
-            if i == 0:
-                self.turn = Color.WHITE if part == "w" else Color.BLACK
-
-            elif i == 1:
-                self.castle_rights = part
-
-        self.board = board.copy()
+            for char in fen_board[i]:
+                if char.isdigit():
+                    j += int(char)
+                else:
+                    self.set_piece(Square(7 - i, j), piece_from_abreviation(char, 7 - i, j))
+                    j += 1
+        self.turn = Color.WHITE if fen[1] == "w" else Color.BLACK
+        self.castle_rights = fen[2]
+        self.en_passant_square = Square(fen[3]) if fen[3] != "-" else None
+        self.half_move_clock = int(fen[4])
+        self.full_move_number = int(fen[5])
 
     def get_fen(self) -> str:
         """returns the fen of the current position"""
-        i, j = 0, 0
-        lines = list()
-        while i < 8:
-            line = ""
-            while j < 8:
-                # si on a un espace
-                if not self.piece_at(i, j):
-                    c = 0
-                    while j < 8 and not self.piece_at(i, j):
-                        c += 1
-                        j += 1
-                    line += str(c)
+        fen = ""
+        empty = 0
+        for i in range(7, -1, -1):
+            for j in range(8):
+                piece = self.get_piece(Square(i, j))
+                if piece:
+                    if empty:
+                        fen += str(empty)
+                        empty = 0
+                    fen += piece.abreviation
                 else:
-                    line += self.piece_at(i, j).abreviation
-                    j += 1
-            lines.append(line)
-            i += 1
-            j = 0
+                    empty += 1
+            if empty:
+                fen += str(empty)
+                empty = 0
+            if i != 0:
+                fen += "/"
+        fen += f" {'w' if self.turn == Color.WHITE else 'b'}"
+        fen += f" {self.castle_rights if self.castle_rights else '-'}"
+        fen += f" {self.en_passant_square if self.en_passant_square else '-'}"
+        fen += f" {self.half_move_clock} {self.full_move_number}"
+        return fen
 
-        board = "/".join(lines)
-        turn = "w" if self.turn == Color.WHITE else "b"
-        castle_rights = f"{self.castle_rights}"
+    def get_piece(self, square: Square) -> Piece or None:
+        return self.board[square.i][square.j]
 
-        returnfen = " ".join([board, turn, castle_rights])
-        return returnfen
+    def set_piece(self, square: Square, piece: Piece) -> None:
+        self.board[square.i][square.j] = piece
 
-    def castle_rights_bit(self) -> ndarray:
-
-        cr = self.castle_rights
-        return np.array([1 if char in cr else 0 for char in format_cr])
-
-    def piece_at(self, i, j) -> Piece or None:
-        piece = self.board[i][j]
-        return piece
-
-    def set_piece(self, i, j, piece):
-        self.board[i][j] = piece
-
-    def cases_attacked_by(self, color: Color) -> list:
-        L = []
+    def squares_attacked_by(self, color: Color) -> list[Square]:
+        L = set()
         for i in range(8):
             for j in range(8):
-                piece = self.piece_at(i, j)
+                piece = self.get_piece(Square(i, j))
                 if piece and piece.color == color:
-                    L.extend(piece.attacking_squares(self))
-        return list(set(L))
+                    L.update(piece.attacking_squares(self))
+        return list(L)
 
-    def legal_moves(self, color=None):
+    def legal_moves(self, color) -> list[Move]:
         color = self.turn if color is None else color
         return_list = []
         for i in range(8):
             for j in range(8):
-                piece = self.piece_at(i, j)
+                piece = self.get_piece(Square(i, j))
                 if piece and piece.color == color:
-                    legals = piece.legal_moves(self)
-                    if legals:
-                        for legal in legals:
-                            return_list.append((i, j, legal[0], legal[1], legal[2]))
+                    legal_moves = piece.legal_moves(self)
+                    return_list.extend(legal_moves)
         return return_list
 
-    def get_legal_moves_piece(self, i, j):
-        piece = self.piece_at(i, j)
-        if piece:
-            return piece.legal_moves(self)
+    def get_legal_moves_piece(self, square: Square):
+        piece = self.get_piece(square)
+
+        if piece is None:
+            raise Exception("No piece at this square")
+        elif piece.color != self.turn:
+            raise Exception("Piece is not the right color")
         else:
-            return []
+            return piece.legal_moves(self)
 
     def ordered_legal_moves(self, color: Color):
         lm = self.legal_moves(color)
-        lm.sort(key=lambda tup: tup[4], reverse=True)
         return lm
+        # TODO: order the moves checks first, captures second, then the rest
 
     def hasLegalmoves(self, color):
         for i in range(8):
             for j in range(8):
-                piece = self.piece_at(i, j)
-                if piece and piece.color == color and piece.legal_moves(self):
+                piece = self.get_piece(Square(i, j))
+                if piece and piece.color == color and piece.almost_legal_moves(self):
                     return True
         return False
 
-    def king_coord(self, color: Color) -> tuple:
+    def get_king_square(self, color: Color) -> Square:
+        target = "K" if color == Color.WHITE else "k"
         for i in range(8):
             for j in range(8):
-                piece = self.piece_at(i, j)
-                if piece and piece.abreviation == ("K" if color == Color.WHITE else "k"):
-                    return i, j
+                piece = self.get_piece(Square(i, j))
+                if piece and piece.abreviation == target:
+                    return Square(i, j)
 
     def king(self, color: Color):
-        i, j = self.king_coord(color)
-        return self.piece_at(i, j)
+        s = self.get_king_square(color)
+        return self.get_piece(s)
 
     @staticmethod
-    def isCapture(move) -> bool:
-        return move[4] == 1
+    def isCapture(move: Move) -> bool:
+        return move.is_capture
 
     @staticmethod
     def isCheck(move):
-        return move[4] == 2
+        return move.is_check
 
     def isIncheck(self, color: Color) -> bool:
-        i, j = self.king_coord(color)
-        return (i, j) in self.cases_attacked_by((Color.WHITE if color == Color.BLACK else Color.BLACK))
+        s = self.get_king_square(color)
+        square_attacked = self.squares_attacked_by(other_color(color))
+        return s in square_attacked
 
-    def isMated(self, color: Color) -> bool:
-        return self.isIncheck(color) and not self.hasLegalmoves(color)
+    def update_game_state(self, debug=False):
+        for i in range(8):
+            for j in range(8):
+                p = self.get_piece(Square(i, j))
+                if p and p.color == self.turn and p.legal_moves(self):
+                    if debug:
+                        print(f"{self.turn} has legal moves : {p.legal_moves(self)}")
+                        self.state = State.GAMEON
+                    return
 
-    def isStalemate(self, color: Color) -> bool:
-        return not self.hasLegalmoves(color)
-
-    def update_game_state(self, color: Color):
-        if self.isMated(color):
-            self.state = State.BLACKWINS if color == Color.WHITE else State.WHITEWINS
-        elif self.isStalemate(color):
+        if self.isIncheck(self.turn):
+            self.state = State.WHITEWINS if self.turn == Color.BLACK else State.BLACKWINS
+        else:
             self.state = State.DRAW
+        print(f"game state : {self.state}")
 
-    def move(self, move, switch_turn=True) -> None:
-        i, j, dest_i, dest_j, _ = move
-        piece = self.piece_at(i, j)
+    def move(self, move: Move) -> None:
+        piece = self.get_piece(move.origin)
         if not piece:
-            print(f"{i,j=}")
-            print(f"{self}")
-            raise Exception
-        self.mark = []
+            raise Exception(f"no piece at this square : {move.origin}")
+        if piece.color != self.turn:
+            raise Exception(f"it's not {piece.color}'s turn")
+        self.en_passant_square = None
 
         # special moves
         # castle
         piece_type = piece.abreviation.lower()
         if piece_type == "k":
             self.remove_castle_rights(piece.color)
-            if i == 0 and j == 4 and dest_i == 0 and dest_j == 2:
-                self.move((0, 0, 0, 3, 0), False)
-            elif i == 0 and j == 4 and dest_i == 0 and dest_j == 6:
-                self.move((0, 7, 0, 5, 0), False)
-            elif i == 7 and j == 4 and dest_i == 7 and dest_j == 2:
-                self.move((7, 0, 7, 3, 0), False)
-            elif i == 7 and j == 4 and dest_i == 7 and dest_j == 6:
-                self.move((7, 7, 7, 5, 0), False)
+            if abs(move.origin.j - move.destination.j) == 2:
+                rook_square = Square(i, 7 if j < move.destination.j else 0)
+                rook = self.get_piece(rook_square)
+                self.set_piece(rook_square, None)
+                self.set_piece(Square(i, 5 if j < move.destination.j else 3), rook)
+                rook.moved(Square(i, 5 if j < move.destination.j else 3))
 
         elif piece_type == "r" and piece.never_moved and self.castle_rights:
-            self.remove_castle_rights(piece.color, j)
+            self.remove_castle_rights(piece.color, move.origin.j)
         # promotion
-        elif piece.abreviation.lower() == "p" and dest_i == (0 if piece.direction == -1 else 7):
-            piece = Queen(piece.color, i, j)
+        elif piece_type == "p" and move.destination.i == (0 if piece.direction == -1 else 7):
+            self.set_piece(move.origin, None)
+            self.set_piece(move.destination, Queen(piece.color, move.destination))
 
-        # en passant
-        elif piece_type == "p" and dest_i == i + 2 * piece.direction:
-            self.mark = [(i + piece.direction, j)]
-        elif piece_type == 'p' and j != dest_j and not self.piece_at(dest_i, dest_j):
-            self.capture(i, dest_j)
 
-        self.set_piece(i, j, None)
-        self.set_piece(dest_i, dest_j, piece)
-        piece.moved(dest_i, dest_j)
+        # en passant square
+        elif piece_type == "p" and move.destination.i == move.origin.i + 2 * piece.direction:
+            self.en_passant_square = Square(move.origin.i + piece.direction, move.origin.j)
+        # en passant capture
+        elif piece_type == 'p' and move.origin.j != move.destination.j:
+            self.set_piece(Square(move.origin.i, move.destination.j), None)  # capture the pawn
 
-        self.fen = self.get_fen()
-        if switch_turn:
-            self.switch_turn()
+        self.set_piece(move.origin, None)
+        self.set_piece(move.destination, piece)
+        piece.moved(move.destination)
 
-    def real_move(self, move):
-        """Only used in Game.py, it is called once per move and not when calculating"""
+    def real_move(self, move: Move) -> None:
+        """Called once the move is validated, updates the game state, switches the turn and increments the halfmove clock"""
         self.move(move)
-        self.update_game_state(self.turn)
+        self.switch_turn()
 
-    def capture(self, i, j):
-        self.board[i][j] = None
+        if self.turn == Color.WHITE:
+            self.full_move_number += 1
+        dest = move.destination
+        piece = self.get_piece(dest)
+        if piece and piece.abreviation.lower() == "p" or move.is_capture:
+            self.half_move_clock = 0
+        else:
+            self.half_move_clock += 1
+        self.update_game_state()
 
     def remove_castle_rights(self, color, j=None) -> None:
         if not self.castle_rights:
@@ -258,7 +239,7 @@ class Logic:
         score = 0
         for i in range(8):
             for j in range(8):
-                piece = self.piece_at(i, j)
+                piece = self.get_piece(i, j)
                 if piece and piece.color == color:
                     score += piece_value[piece.abreviation.lower()]
         return score
@@ -294,11 +275,45 @@ class Logic:
         return sqrt((bk.i - wk.i) ** 2 + (bk.i - wk.i) ** 2)
 
     def distance_center_king(self, color):
-        i, j = self.king_coord(color)
+        i, j = self.get_king_square(color)
         return sqrt((i - 3) ** 2 + (j - 3) ** 2)
 
     def nb_pieces_on_board(self):
         return len([0 for i in range(8) for j in range(8) if self.board[i][j]])
 
+    def __repr__(self):
+        s = ""
+        for i in range(8, 0, -1):
+            s += str(i) + " "
+            for j in "abcdefgh":
+                piece = self.get_piece(Square(j + str(i)))
+                if piece:
+                    s += piece.abreviation + " "
+                else:
+                    s += "~ "
+            s += "\n"
+        s += "____________________\n"
+        s += "  a b c d e f g h"
+        return s
+
+    def test_move(self, move):
+        pass
+
 
 piece_value = {"p": 1, "r": 5, "b": 3, "n": 3, "q": 9, "k": 0}
+
+
+def translate_move(start, end):
+    i = 8 - int(start[1])
+    j = ord(start[0]) - ord("a")
+    dest_i = 8 - int(end[1])
+    dest_j = ord(end[0]) - ord("a")
+    return i, j, dest_i, dest_j
+
+
+if __name__ == "__main__":
+    from constants import STARTINGPOSFEN
+
+    l = Logic(STARTINGPOSFEN)
+    l.real_move(Move(Square("e2"), Square("e4")))
+    l.real_move(Move(Square("f7"), Square("f5")))

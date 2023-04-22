@@ -1,3 +1,5 @@
+import os
+
 from pygame import image
 
 # Colors
@@ -24,19 +26,20 @@ CASESIZE = BOARDSIZE // 8
 
 # Pieces
 
-P_image = image.load(r"assets/row-1-col-6.png")  # white
-R_image = image.load(r"assets/row-1-col-5.png")
-N_image = image.load(r"assets/row-1-col-4.png")
-B_image = image.load(r"assets/row-1-col-3.png")
-Q_image = image.load(r"assets/row-1-col-2.png")
-K_image = image.load(r"assets/row-1-col-1.png")
+dir = os.path.dirname(__file__)
+P_image = image.load(fr"{dir}/assets/row-1-col-6.png")  # white
+R_image = image.load(fr"{dir}/assets/row-1-col-5.png")  # white
+N_image = image.load(fr"{dir}/assets/row-1-col-4.png")  # white
+B_image = image.load(fr"{dir}/assets/row-1-col-3.png")  # white
+Q_image = image.load(fr"{dir}/assets/row-1-col-2.png")  # white
+K_image = image.load(fr"{dir}/assets/row-1-col-1.png")  # white
 
-p_image = image.load(r"assets/row-2-col-6.png")  # black
-r_image = image.load(r"assets/row-2-col-5.png")
-n_image = image.load(r"assets/row-2-col-4.png")
-b_image = image.load(r"assets/row-2-col-3.png")
-q_image = image.load(r"assets/row-2-col-2.png")
-k_image = image.load(r"assets/row-2-col-1.png")
+p_image = image.load(fr"{dir}/assets/row-2-col-6.png")  # black
+r_image = image.load(fr"{dir}/assets/row-2-col-5.png")  # black
+n_image = image.load(fr"{dir}/assets/row-2-col-4.png")  # black
+b_image = image.load(fr"{dir}/assets/row-2-col-3.png")  # black
+q_image = image.load(fr"{dir}/assets/row-2-col-2.png")  # black
+k_image = image.load(fr"{dir}/assets/row-2-col-1.png")  # black
 
 # other
 STARTINGPOSFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
