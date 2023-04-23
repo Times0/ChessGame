@@ -1,7 +1,7 @@
 from itertools import product
 from enum import Enum
 from fonctions import other_color, isInbounds
-from square import Square, Move
+from square import Square, Move, Side
 
 
 # forwards declaration
@@ -51,9 +51,9 @@ class Piece:
         for move in self.almost_legal_moves(logic):
             virtual = Logic(logic.get_fen())
             virtual.move(move)
-            me_is_in_check = virtual.isIncheck(self.color)
+            me_is_in_check = virtual.is_in_check(self.color)
             if not me_is_in_check:
-                if virtual.isIncheck(other_color(self.color)):
+                if virtual.is_in_check(other_color(self.color)):
                     move.is_check = True
                 returnlist.append(move)
         return returnlist
@@ -89,7 +89,7 @@ class Pawn(Piece):
         i1 = i + dir  # case devant le pion (relativement)
         if isInbounds(i1, j) and not piece_at(Square(i1, j)):
             returnlist.append(Move(self.square, Square(i1, j)))
-            if self.never_moved:
+            if self.square.i == (1 if self.color == Color.WHITE else 6):
                 i2 = i1 + dir  # deux cases devant le pion
                 if isInbounds(i2, j) and not piece_at(Square(i2, j)):
                     returnlist.append(Move(self.square, Square(i2, j)))
@@ -103,9 +103,9 @@ class Pawn(Piece):
 
         # en croissant
         if board.en_passant_square:
-            i2, j2 = board.en_passant_square.i, board.en_passant_square.j
-            if i2 == i1 and abs(j2 - j) == 1:
-                returnlist.append(Move(self.square, Square(i1, j2), is_capture=True))
+            if board.en_passant_square.j in [j - 1, j + 1]:
+                if board.en_passant_square.i == i + dir:
+                    returnlist.append(Move(self.square, board.en_passant_square, is_capture=True))
         return returnlist
 
     def attacking_squares(self, logic) -> list[Square]:
@@ -230,7 +230,7 @@ class King(Piece):
         super().__init__(color, square)
         self.set_abreviation(self.__class__)
 
-    def almost_legal_moves(self, board):
+    def almost_legal_moves(self, board: Logic):
         piece_at = board.get_piece
         returnlist = []
 
@@ -244,25 +244,20 @@ class King(Piece):
                 elif piece.color != self.color:
                     returnlist.append(Move(self.square, Square(i1, j1), is_capture=True))
 
-        castle_rights = board.castle_rights
-        if self.color == Color.WHITE:
-            rights = str([char for char in castle_rights if char.upper() == char])
-        else:
-            rights = str([char for char in castle_rights if char.lower() == char])
-        if rights:
-            i, j = (0, 4) if self.color == Color.BLACK else (7, 4)
-            if "k" in rights.lower():
-                if not piece_at(Square(i, j + 1)) and not piece_at(Square(i, j + 2)):
-                    attacked_cases = board.squares_attacked_by(other_color(self.color))
-                    if Square(i, j) not in attacked_cases and Square(i, j + 1) not in attacked_cases and (
-                            i, j + 2) not in attacked_cases and piece_at(i, 7):
-                        returnlist.append(Move(self.square, Square(i, j + 2)))
-            if "q" in rights.lower():
-                if not piece_at(Square(i, j - 1)) and not piece_at(Square(i, j - 2)) and not piece_at(Square(i, j - 3)):
-                    attacked_cases = board.squares_attacked_by(other_color(self.color))
-                    if Square(i, j) not in attacked_cases and Square(i, j - 1) not in attacked_cases and Square(
-                            i, j - 2) not in attacked_cases and piece_at(Square(i, 0)):
-                        returnlist.append(Move(self.square, Square(i, j - 2)))
+        # Castling
+        a_s = board.squares_attacked_by(other_color(self.color))
+        # KING SIDE
+        if self.is_castling_still_available(board, Side.KING):
+            if not piece_at(Square(i, j + 1)) and not piece_at(Square(i, j + 2)) \
+                    and Square(i, j + 1) not in a_s and Square(i, j) not in a_s:
+                returnlist.append(Move(self.square, Square(i, j + 2)))
+
+        # QUEEN SIDE
+        if self.is_castling_still_available(board, Side.QUEEN):
+            if not piece_at(Square(i, j - 1)) and not piece_at(Square(i, j - 2)) and not piece_at(Square(i, j - 3)) \
+                    and Square(i, j) not in a_s and Square(i, j - 1) not in a_s and Square(i, j - 2) not in a_s:
+                returnlist.append(Move(self.square, Square(i, j - 2)))
+
         return returnlist
 
     def attacking_squares(self, logic):
@@ -278,6 +273,19 @@ class King(Piece):
             if isInbounds(i1, j1) and (not p or p.color != self.color):
                 returnlist.append(Square(i1, j1))
         return returnlist
+
+    def is_castling_still_available(self, logic: Logic, side: Side):
+        color = self.color
+        if color == Color.WHITE:
+            if side == Side.KING:
+                return logic.castle_rights_bit & 0b0001
+            else:
+                return logic.castle_rights_bit & 0b0010
+        else:
+            if side == Side.KING:
+                return logic.castle_rights_bit & 0b0100
+            else:
+                return logic.castle_rights_bit & 0b1000
 
 
 dico = {"p": Pawn, "r": Rook, "b": Bishop, "n": Knight, "q": Queen, "k": King}

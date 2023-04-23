@@ -1,3 +1,11 @@
+import enum
+
+
+class Side(enum.Enum):
+    QUEEN = 0
+    KING = 1
+
+
 class Square:
     def __init__(self, *args):
         if len(args) == 1:

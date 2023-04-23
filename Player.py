@@ -38,10 +38,7 @@ class Bot(Player):
         print("Starting reflection..")
         start = time.time()
         color = logic.turn
-        if logic.nb_pieces_on_board() > 5:
-            return_list.append(self.play_well(logic, 2, color))
-        else:
-            return_list.append(self.play_well(logic, 3, color))
+        return_list.append(self.play_well(logic, 1, color))
         end = time.time()
         print(f"Temps de reflexion du bot : {end - start:.2f}s")
 
@@ -50,8 +47,7 @@ class Bot(Player):
         return self.minmax_alpha_beta_root(logic, depth, -1000, 1000, M)
 
     # minimax with pruning (faster)
-    def minmax_alpha_beta(self, logic, depth, alpha, beta, maximizing, force_continue: bool, debug=False):
-        logic.update_game_state()
+    def minmax_alpha_beta(self, logic, depth, alpha, beta, maximizing, force_continue: bool, debug=True):
         if debug:
             print(f"Here is the board after the move : \n {logic} \n {logic.state=}\n {maximizing=} \n\n")
         if logic.state == State.WHITEWINS:
@@ -69,11 +65,8 @@ class Bot(Player):
                 possible_moves = logic.ordered_legal_moves(Color.WHITE)
                 for move in possible_moves:
                     virtual = Logic(fen=logic.get_fen())
-                    isCapture = virtual.isCapture(move)
-                    isCheck = virtual.isCheck(move)
-                    f_continue = isCapture
-
-                    virtual.move(move)
+                    f_continue = move.is_check
+                    virtual.real_move(move)
 
                     evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False, f_continue)
 
@@ -91,17 +84,12 @@ class Bot(Player):
                     print(f"{possible_moves=}")
                 for move in possible_moves:
                     virtual = Logic(fen=logic.get_fen())
-                    isCapture = virtual.isCapture(move)
-                    isCheck = virtual.isCheck(move)
-                    f_continue = isCapture
-
-                    virtual.move(move)
-
+                    f_continue = move.is_capture
+                    virtual.real_move(move)
                     evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True, f_continue)
 
                     if evaluation <= min_evaluation:
                         min_evaluation, best_move = evaluation, move
-
                     if debug:
                         print(f"{move=}  {evaluation=}  {min_evaluation=}")
                     beta = min(beta, min_evaluation)
@@ -113,50 +101,43 @@ class Bot(Player):
                 return min_evaluation, best_move
 
     def minmax_alpha_beta_root(self, logic, depth, alpha, beta, maximizing):
-        allevals = []
+        all_evals_move = []
         if maximizing:
             max_evaluation = -1000
             possible_moves = logic.ordered_legal_moves(Color.WHITE)
             for move in possible_moves:
                 virtual = Logic(fen=logic.get_fen())
-
-                virtual.move(move)
-
-                isCheck = virtual.isCheck(move)
-                if isCheck:
-                    evaluation, _ = self.minmax_alpha_beta(virtual, depth, alpha, beta, False, True)
-                else:
-                    evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False, True)
+                virtual.real_move(move)
+                force_continue = move.is_check or move.is_capture
+                evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, False, force_continue)
 
                 if evaluation >= 1000:
                     return evaluation, move
-                allevals.append((evaluation, move))
+                all_evals_move.append((evaluation, move))
 
                 alpha = max(alpha, max_evaluation)
                 if alpha >= beta:
                     break
-
-            max_evaluation = max(allevals)[0]
-            all_best_eval_moves = [i for i in allevals if i[0] == max_evaluation]
+            evals = [i[0] for i in all_evals_move]
+            max_evaluation = max(evals)
+            all_best_eval_moves = [e for e in all_evals_move if e[0] == max_evaluation]
             return choice(all_best_eval_moves)
         else:
             min_evaluation = 1000
             possible_moves = logic.ordered_legal_moves(Color.BLACK)
             for move in possible_moves:
                 virtual = Logic(fen=logic.get_fen())
-                virtual.move(move)
-                isCheck = virtual.isCheck(move)
-                if isCheck:
-                    evaluation, _ = self.minmax_alpha_beta(virtual, depth, alpha, beta, True, True)
-                else:
-                    evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True, True)
+                virtual.real_move(move)
+                force_continue = move.is_check or move.is_capture
+                evaluation, _ = self.minmax_alpha_beta(virtual, depth - 1, alpha, beta, True, force_continue)
 
-                allevals.append((evaluation, move))
+                all_evals_move.append((evaluation, move))
 
                 beta = min(beta, min_evaluation)
                 if alpha >= beta:
                     break
 
-            min_evaluation = min(allevals)[0]
-            all_best_eval_moves = [i for i in allevals if i[0] == min_evaluation]
+            evals = [i[0] for i in all_evals_move]
+            min_evaluation = min(evals)
+            all_best_eval_moves = [e for e in all_evals_move if e[0] == min_evaluation]
             return choice(all_best_eval_moves)

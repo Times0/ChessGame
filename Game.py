@@ -19,8 +19,8 @@ class Game:
         self.game_on = True
         self.window_on = True
 
-        self.players = {Color.WHITE: PlayerType.HUMAN,
-                        Color.BLACK: PlayerType.HUMAN}
+        self.players = {Color.WHITE: PlayerType.BOT,
+                        Color.BLACK: PlayerType.BOT}
 
         self.bot_is_thinking = False
         self.returnlist = []
@@ -35,7 +35,7 @@ class Game:
     def run(self):
         clock = pygame.time.Clock()
         while self.window_on:
-            clock.tick(60)
+            clock.tick(15)
             self.events()
             self.bot_events()
             self.draw()
@@ -54,7 +54,8 @@ class Game:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = pygame.mouse.get_pos()
                     if self.board.clicked(pos):
-                        print("Clicked on a piece")
+                        if self.logic.turn != self.logic.get_piece(Square(*self.board.clicked_piece_coord)).color:
+                            continue
                         self.current_piece_legal_moves = self.logic.get_legal_moves_piece(
                             Square(*self.board.clicked_piece_coord))
 
@@ -70,7 +71,7 @@ class Game:
                         for m in self.current_piece_legal_moves:
                             if m == move:
                                 self.play(m)
-                                print("Move is : ", m)
+                                print("Move played : ", m)
                                 self.current_piece_legal_moves = []
 
     def play(self, move):

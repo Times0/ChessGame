@@ -1,9 +1,7 @@
 import numpy as np
 from numpy import ndarray, sqrt
-from Pieces import Square, Move, Queen, Color, piece_from_abreviation, other_color
+from Pieces import Square, Move, Queen, Color, piece_from_abreviation, other_color, Side
 import enum
-
-format_cr = "KQkq"
 
 
 class State(enum.Enum):
@@ -18,18 +16,18 @@ class Piece:
 
 
 class Logic:
-    """ a Logic instance is an independant chess board that has every fonction needed to play the game like isMate(
-    color) or cases_attacked_by(color) and attributes such as turn, state, castle_rights etc"""
-
     def __init__(self, fen):
         self.board = np.empty((8, 8), dtype=Piece)
         self.state = State.GAMEON
         self.turn = Color
-        self.castle_rights = str()
+        self.castle_rights_bit = 0
         self.full_move_number = int()
         self.half_move_clock = int()
         self.en_passant_square = str()
         self.load_fen(fen)
+
+        self.king_square = {Color.WHITE: self.get_king_square(Color.WHITE),
+                            Color.BLACK: self.get_king_square(Color.BLACK)}
 
     def load_fen(self, fen) -> None:
         """loads a fen into the board"""
@@ -44,7 +42,17 @@ class Logic:
                     self.set_piece(Square(7 - i, j), piece_from_abreviation(char, 7 - i, j))
                     j += 1
         self.turn = Color.WHITE if fen[1] == "w" else Color.BLACK
-        self.castle_rights = fen[2]
+        str_castle_rights = fen[2]
+        self.castle_rights_bit = 0b0000
+        if "K" in str_castle_rights:
+            self.castle_rights_bit |= 0b0001
+        if "Q" in str_castle_rights:
+            self.castle_rights_bit |= 0b0010
+        if "k" in str_castle_rights:
+            self.castle_rights_bit |= 0b0100
+        if "q" in str_castle_rights:
+            self.castle_rights_bit |= 0b1000
+
         self.en_passant_square = Square(fen[3]) if fen[3] != "-" else None
         self.half_move_clock = int(fen[4])
         self.full_move_number = int(fen[5])
@@ -69,7 +77,17 @@ class Logic:
             if i != 0:
                 fen += "/"
         fen += f" {'w' if self.turn == Color.WHITE else 'b'}"
-        fen += f" {self.castle_rights if self.castle_rights else '-'}"
+        str_castle_rights = ""
+        if self.castle_rights_bit & 0b0001:
+            str_castle_rights += "K"
+        if self.castle_rights_bit & 0b0010:
+            str_castle_rights += "Q"
+        if self.castle_rights_bit & 0b0100:
+            str_castle_rights += "k"
+        if self.castle_rights_bit & 0b1000:
+            str_castle_rights += "q"
+
+        fen += f" {str_castle_rights if str_castle_rights else '-'}"
         fen += f" {self.en_passant_square if self.en_passant_square else '-'}"
         fen += f" {self.half_move_clock} {self.full_move_number}"
         return fen
@@ -111,42 +129,32 @@ class Logic:
             return piece.legal_moves(self)
 
     def ordered_legal_moves(self, color: Color):
-        lm = self.legal_moves(color)
-        return lm
-        # TODO: order the moves checks first, captures second, then the rest
-
-    def hasLegalmoves(self, color):
-        for i in range(8):
-            for j in range(8):
-                piece = self.get_piece(Square(i, j))
-                if piece and piece.color == color and piece.almost_legal_moves(self):
-                    return True
-        return False
+        """Returns a list of legal moves where the checks are first then captures then the rest"""
+        legal_moves = self.legal_moves(color)
+        checks = []
+        captures = []
+        rest = []
+        for move in legal_moves:
+            if move.is_check:
+                checks.append(move)
+            elif move.is_capture:
+                captures.append(move)
+            else:
+                rest.append(move)
+        return checks + captures + rest
 
     def get_king_square(self, color: Color) -> Square:
-        target = "K" if color == Color.WHITE else "k"
         for i in range(8):
             for j in range(8):
-                piece = self.get_piece(Square(i, j))
-                if piece and piece.abreviation == target:
+                p = self.get_piece(Square(i, j))
+                if p and p.color == color and p.abreviation.lower() == "k":
                     return Square(i, j)
+        raise Exception(f"No king found for {color}\n {self}")
 
-    def king(self, color: Color):
-        s = self.get_king_square(color)
-        return self.get_piece(s)
-
-    @staticmethod
-    def isCapture(move: Move) -> bool:
-        return move.is_capture
-
-    @staticmethod
-    def isCheck(move):
-        return move.is_check
-
-    def isIncheck(self, color: Color) -> bool:
-        s = self.get_king_square(color)
-        square_attacked = self.squares_attacked_by(other_color(color))
-        return s in square_attacked
+    def is_in_check(self, color: Color) -> bool:
+        s = self.king_square[color]
+        squares_attacked = self.squares_attacked_by(other_color(color))
+        return s in squares_attacked
 
     def update_game_state(self, debug=False):
         for i in range(8):
@@ -155,49 +163,50 @@ class Logic:
                 if p and p.color == self.turn and p.legal_moves(self):
                     if debug:
                         print(f"{self.turn} has legal moves : {p.legal_moves(self)}")
-                        self.state = State.GAMEON
+                    self.state = State.GAMEON
                     return
 
-        if self.isIncheck(self.turn):
+        if self.is_in_check(self.turn):
             self.state = State.WHITEWINS if self.turn == Color.BLACK else State.BLACKWINS
         else:
             self.state = State.DRAW
-        print(f"game state : {self.state}")
 
     def move(self, move: Move) -> None:
         piece = self.get_piece(move.origin)
         if not piece:
-            raise Exception(f"no piece at this square : {move.origin}")
+            raise Exception(f"Tried to do the move {move} but there is no piece at {move.origin}\n{self}")
         if piece.color != self.turn:
             raise Exception(f"it's not {piece.color}'s turn")
         self.en_passant_square = None
 
-        # special moves
         # castle
         piece_type = piece.abreviation.lower()
         if piece_type == "k":
-            self.remove_castle_rights(piece.color)
+            self.king_square[piece.color] = move.destination
             if abs(move.origin.j - move.destination.j) == 2:
-                rook_square = Square(i, 7 if j < move.destination.j else 0)
+                rook_square = Square(move.origin.i, 7 if move.origin.j < move.destination.j else 0)
                 rook = self.get_piece(rook_square)
                 self.set_piece(rook_square, None)
-                self.set_piece(Square(i, 5 if j < move.destination.j else 3), rook)
-                rook.moved(Square(i, 5 if j < move.destination.j else 3))
+                self.set_piece(Square(move.origin.i, 5 if move.origin.j < move.destination.j else 3), rook)
+                rook.moved(Square(move.origin.i, 5 if move.origin.j < move.destination.j else 3))
+            self.remove_castle_rights(piece.color, Side.KING)
+            self.remove_castle_rights(piece.color, Side.QUEEN)
 
-        elif piece_type == "r" and piece.never_moved and self.castle_rights:
-            self.remove_castle_rights(piece.color, move.origin.j)
+        elif piece_type == "r" and piece.never_moved:
+            side = Side.KING if piece.square.j < move.destination.j else Side.QUEEN
+            self.remove_castle_rights(piece.color, side)
         # promotion
-        elif piece_type == "p" and move.destination.i == (0 if piece.direction == -1 else 7):
+        elif piece_type == "p" and move.destination.i == (7 if piece.direction == -1 else 0):
             self.set_piece(move.origin, None)
             self.set_piece(move.destination, Queen(piece.color, move.destination))
 
-
         # en passant square
-        elif piece_type == "p" and move.destination.i == move.origin.i + 2 * piece.direction:
-            self.en_passant_square = Square(move.origin.i + piece.direction, move.origin.j)
+        if piece_type == "p" and move.destination.i == (3 if piece.direction == 1 else 4):
+            self.en_passant_square = Square(move.origin.i + piece.direction, move.destination.j)
+
         # en passant capture
-        elif piece_type == 'p' and move.origin.j != move.destination.j:
-            self.set_piece(Square(move.origin.i, move.destination.j), None)  # capture the pawn
+        elif piece_type == "p" and not self.get_piece(move.destination) and move.destination.j != move.origin.j:
+            self.set_piece(Square(move.destination.i - piece.direction, move.destination.j), None)
 
         self.set_piece(move.origin, None)
         self.set_piece(move.destination, piece)
@@ -210,36 +219,35 @@ class Logic:
 
         if self.turn == Color.WHITE:
             self.full_move_number += 1
-        dest = move.destination
-        piece = self.get_piece(dest)
+        piece = self.get_piece(move.destination)
         if piece and piece.abreviation.lower() == "p" or move.is_capture:
             self.half_move_clock = 0
         else:
             self.half_move_clock += 1
         self.update_game_state()
 
-    def remove_castle_rights(self, color, j=None) -> None:
-        if not self.castle_rights:
-            return
-        if j == 0:
-            r = "q"
-        elif j == 7:
-            r = "k"
-        else:
-            r = "qk"
+    def remove_castle_rights(self, color: Color, side: Side) -> None:
+        """Removes the castle rights for the given color and side 1110 means no castle rights for white king and KINGSIDE"""
         if color == Color.WHITE:
-            r = r.upper()
-        for char in r:
-            self.castle_rights = self.castle_rights.replace(char, "")
+            if side == Side.KING:
+                self.castle_rights_bit &= 0b1110
+            else:
+                self.castle_rights_bit &= 0b1101
+        else:
+            if side == Side.KING:
+                self.castle_rights_bit &= 0b1011
+            else:
+                self.castle_rights_bit &= 0b0111
 
     def switch_turn(self) -> None:
         self.turn = Color.WHITE if self.turn == Color.BLACK else Color.BLACK
 
+    # evaluation for the AI
     def get_score(self, color):
         score = 0
         for i in range(8):
             for j in range(8):
-                piece = self.get_piece(i, j)
+                piece = self.get_piece(Square(i, j))
                 if piece and piece.color == color:
                     score += piece_value[piece.abreviation.lower()]
         return score
@@ -301,15 +309,6 @@ class Logic:
 
 
 piece_value = {"p": 1, "r": 5, "b": 3, "n": 3, "q": 9, "k": 0}
-
-
-def translate_move(start, end):
-    i = 8 - int(start[1])
-    j = ord(start[0]) - ord("a")
-    dest_i = 8 - int(end[1])
-    dest_j = ord(end[0]) - ord("a")
-    return i, j, dest_i, dest_j
-
 
 if __name__ == "__main__":
     from constants import STARTINGPOSFEN
