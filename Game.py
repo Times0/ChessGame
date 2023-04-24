@@ -23,7 +23,7 @@ class Game:
                         Color.BLACK: PlayerType.BOT}
 
         self.bot_is_thinking = False
-        self.returnlist = []
+        self.returnlist = [None]
         self.thread = None
 
         # Buttons
@@ -92,13 +92,13 @@ class Game:
                 self.thread.start()
             else:
                 # Check if the move was found
-                if self.returnlist:
+                if self.returnlist[0]:
                     eval_and_move = self.returnlist[0]
                     self.bot_is_thinking = False
                     e, move = eval_and_move
                     print(f"Eval found : {e}")
                     self.play(move)
-                    self.returnlist = []
+                    self.returnlist = [None]
 
     def check_buttons(self, events):
         for event in events:

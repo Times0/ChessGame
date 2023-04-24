@@ -1,8 +1,11 @@
 import unittest
 from Logic import Logic, Color
 from constants import *
-from Player import Bot
+from Player import Bot, play_well
 from Logic import State, Square, Move
+
+import logging
+import coloredlogs
 
 
 class TestMovement(unittest.TestCase):
@@ -65,41 +68,51 @@ class TestCastling(unittest.TestCase):
         self.assertNotIn(Move(Square("e8"), Square("g8")), logic.legal_moves(Color.BLACK))
 
 
+class TestPromotion(unittest.TestCase):
+    def test(self):
+        fen = "rnb1k2r/pp1p2Pp/3b2P1/q1p1p2n/7P/8/PPPP1P2/RNBQKBNR w KQkq - 1 9"
+        logic = Logic(fen)
+        self.assertEqual(logic.get_fen(), fen)
+
+        logic.real_move(Move(Square("g7"), Square("g8")))
+
+        new_fen = "rnb1k1Qr/pp1p3p/3b2P1/q1p1p2n/7P/8/PPPP1P2/RNBQKBNR b KQkq - 0 9"
+        self.assertEqual(logic.get_fen(), new_fen)
+
+
 class TestProblems(unittest.TestCase):
     def test_problem_mate_in_1(self):
         file = open("problems/mate_in_one", "r")
-        bot_agent = Bot()
         for line in file:
             fen = line.strip()
             logic = Logic(fen)
-            res = []
-            bot_agent.play(logic, res)
-            logic.real_move(res[0][1])
+            e, move = play_well(logic)
+            logic.real_move(move)
             supposed_winner = logic.turn
             self.assertEqual(logic.state, State.WHITEWINS if supposed_winner == Color.BLACK else State.BLACKWINS)
         file.close()
 
-    def tttest_problem_mate_in_2(self):
+    def test_problem_mate_in_2(self):
         file = open("problems/mate_in_two", "r")
-        bot_agent_1 = Bot()
-        bot_agent_2 = Bot()
-        for line in file:
+        nb_lines = sum(1 for line in open("problems/mate_in_two"))
+        for i, line in enumerate(file):
             fen = line.strip()
             logic = Logic(fen)
-            res = []
-            bot_agent_1.play(logic, res)
-            logic.real_move(res[0][1])
+
+            e, move = play_well(logic)
+            logic.real_move(move)
             self.assertEqual(logic.state, State.GAMEON)
 
-            bot_agent_2.play(logic, res)
-            logic.real_move(res[0][1])
+            e, move = play_well(logic)
+            logic.real_move(move)
             self.assertEqual(logic.state, State.GAMEON)
 
-            bot_agent_1.play(logic, res)
-            logic.real_move(res[0][1])
+            e, move = play_well(logic)
+            logic.real_move(move)
 
             supposed_winner = logic.turn
             self.assertEqual(logic.state, State.WHITEWINS if supposed_winner == Color.BLACK else State.BLACKWINS)
+            logging.log(logging.INFO, f"Completed {i} out of {nb_lines}")
         file.close()
 
 

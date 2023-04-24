@@ -179,6 +179,11 @@ class Logic:
             raise Exception(f"it's not {piece.color}'s turn")
         self.en_passant_square = None
 
+        if piece and piece.abreviation.lower() == "p" or move.is_capture:
+            self.half_move_clock = 0
+        else:
+            self.half_move_clock += 1
+
         # castle
         piece_type = piece.abreviation.lower()
         if piece_type == "k":
@@ -196,11 +201,12 @@ class Logic:
             side = Side.KING if piece.square.j < move.destination.j else Side.QUEEN
             self.remove_castle_rights(piece.color, side)
         # promotion
-        elif piece_type == "p" and move.destination.i == (7 if piece.direction == -1 else 0):
+        elif piece_type == "p" and move.destination.i == (7 if piece.direction == 1 else 0):
             self.set_piece(move.origin, None)
             self.set_piece(move.destination, Queen(piece.color, move.destination))
+            return
 
-        # en passant square
+            # en passant square
         if piece_type == "p" and move.destination.i == (3 if piece.direction == 1 else 4):
             self.en_passant_square = Square(move.origin.i + piece.direction, move.destination.j)
 
@@ -219,11 +225,7 @@ class Logic:
 
         if self.turn == Color.WHITE:
             self.full_move_number += 1
-        piece = self.get_piece(move.destination)
-        if piece and piece.abreviation.lower() == "p" or move.is_capture:
-            self.half_move_clock = 0
-        else:
-            self.half_move_clock += 1
+
         self.update_game_state()
 
     def remove_castle_rights(self, color: Color, side: Side) -> None:

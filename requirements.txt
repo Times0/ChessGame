@@ -1,2 +1,4 @@
 numpy~=1.24.2
-pygame
+pygame~=2.3.0
+
+coloredlogs~=15.0.1
