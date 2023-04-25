@@ -50,7 +50,7 @@ class Board:
 
     def f(self, i, j):
         if self.flipped:
-            return i, 7-j
+            return i, 7 - j
         else:
             return 7 - i, j
 
@@ -124,17 +124,23 @@ class Board:
         for i in range(8):
             itab = 7 - i if not self.flipped else i
             for j in range(8):
-                jtab = j if not self.flipped else 7-j
-                if self.get_piece_at(itab, jtab) == "gone":
+                jtab = j if not self.flipped else 7 - j
+                piece = self.get_piece_at(itab, jtab)
+                if piece == "gone":
                     # self.show()
                     image_p = globals()[f"{self.dragged_piece.abreviation}_image"]
                     image_p = pygame.transform.smoothscale(image_p, (int(case_size * 1.1), int(case_size * 1.1)))
                     win.blit(image_p,
                              (self.dragged_piece_pos[0] - case_size // 2,
                               self.dragged_piece_pos[1] - case_size // 2))
-                elif self.get_piece_at(itab, jtab) is not None:
-                    image_p = globals()[f"{self.get_piece_at(itab, jtab).abreviation}_image"]
-                    image_p = pygame.transform.smoothscale(image_p, (case_size, case_size))
+                elif piece is not None:
+                    color = piece.color
+                    type = piece.__class__.__name__
+                    abreviation = dico[type]
+                    if color == Color.WHITE:
+                        abreviation = abreviation.upper()
+
+                    image_p = globals()[f"{abreviation}_image"]
                     image_p = pygame.transform.smoothscale(image_p, (case_size, case_size))
                     win.blit(image_p, (x + j * case_size, y + i * case_size))
 
@@ -145,3 +151,11 @@ class Board:
             i, j = self.f(i, j)
             pygame.draw.circle(win, RED, (x + j * case_size + case_size // 2, y + i * case_size + case_size // 2), 5)
 
+
+dico = {"Pawn": "p",
+        "Rook": "r",
+        "Knight": "n",
+        "Bishop": "b",
+        "Queen": "q",
+        "King": "k"
+        }

@@ -17,18 +17,9 @@ class Color(Enum):
 class Piece:
     def __init__(self, color, square: Square):
         from Logic import Logic
-
         self.never_moved = True
         self.color: Color = color
         self.square: Square = square
-        self.abreviation = None
-
-    def set_abreviation(self, name) -> None:
-        inv_map = {v: k for k, v in dico.items()}
-        abreviation = inv_map[name]
-        if self.color == Color.WHITE:
-            abreviation = abreviation.upper()
-        self.abreviation = abreviation
 
     def set_coord_weird(self, i, j) -> None:
         self.i, self.j = i, j
@@ -68,6 +59,10 @@ class Piece:
         self.never_moved = False
         self.square = square
 
+    def get_fen(self) -> str:
+        """Returns the fen notation of the piece"""
+        return self.abreviation if self.color == Color.WHITE else self.abreviation.lower()
+
     def __str__(self):
         s = f"{self.color} {self.abreviation} at {self.square}"
         return s
@@ -76,8 +71,8 @@ class Piece:
 class Pawn(Piece):
     def __init__(self, color, square: Square):
         super().__init__(color, square)
-        self.set_abreviation(self.__class__)
         self.direction = 1 if self.color == Color.WHITE else -1
+        self.abreviation = "P"
 
     def almost_legal_moves(self, board: Logic) -> list[Move]:
         piece_at = board.get_piece
@@ -125,7 +120,7 @@ class Pawn(Piece):
 class Bishop(Piece):
     def __init__(self, color, square: Square):
         super().__init__(color, square)
-        self.set_abreviation(self.__class__)
+        self.abreviation = "B"
 
     def almost_legal_moves(self, board) -> list[Move]:
         piece_at = board.get_piece
@@ -154,7 +149,7 @@ class Bishop(Piece):
 class Rook(Piece):
     def __init__(self, color, square: Square):
         super().__init__(color, square)
-        self.set_abreviation(self.__class__)
+        self.abreviation = "R"
 
     def almost_legal_moves(self, board) -> list[Move]:
         piece_at = board.get_piece
@@ -181,7 +176,7 @@ class Rook(Piece):
 class Knight(Piece):
     def __init__(self, color, square: Square):
         super().__init__(color, square)
-        self.set_abreviation(self.__class__)
+        self.abreviation = "N"
 
     def almost_legal_moves(self, board) -> list[Move]:
         piece_at = board.get_piece
@@ -204,7 +199,7 @@ class Knight(Piece):
 class Queen(Piece):
     def __init__(self, color, square: Square):
         super().__init__(color, square)
-        self.set_abreviation(self.__class__)
+        self.abreviation = "Q"
 
     def almost_legal_moves(self, board):
         piece_at = board.get_piece
@@ -228,7 +223,7 @@ class Queen(Piece):
 class King(Piece):
     def __init__(self, color, square: Square):
         super().__init__(color, square)
-        self.set_abreviation(self.__class__)
+        self.abreviation = "K"
 
     def almost_legal_moves(self, board: Logic):
         piece_at = board.get_piece
@@ -294,3 +289,6 @@ dico2 = {0: None, 1: Pawn, 2: Bishop, 3: Rook, 4: Knight, 5: Queen, 6: King}
 
 def piece_from_abreviation(abreviation, i, j):
     return dico[abreviation.lower()](Color.BLACK if abreviation.lower() == abreviation else Color.WHITE, Square(i, j))
+
+
+piece_value = {"P": 1, "N": 3, "B": 3, "R": 5, "Q": 9, "K": 1000}

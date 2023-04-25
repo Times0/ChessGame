@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import ndarray, sqrt
-from Pieces import Square, Move, Queen, Color, piece_from_abreviation, other_color, Side
+from Pieces import Square, Move, Color, piece_from_abreviation, other_color, Side, Piece, Pawn, Knight, Bishop, Rook, \
+    Queen, King
 import enum
 
 
@@ -68,7 +69,7 @@ class Logic:
                     if empty:
                         fen += str(empty)
                         empty = 0
-                    fen += piece.abreviation
+                    fen += piece.get_fen()
                 else:
                     empty += 1
             if empty:
@@ -147,7 +148,7 @@ class Logic:
         for i in range(8):
             for j in range(8):
                 p = self.get_piece(Square(i, j))
-                if p and p.color == color and p.abreviation.lower() == "k":
+                if p and p.color == color and p.__class__ == King:
                     return Square(i, j)
         raise Exception(f"No king found for {color}\n {self}")
 
@@ -244,53 +245,6 @@ class Logic:
     def switch_turn(self) -> None:
         self.turn = Color.WHITE if self.turn == Color.BLACK else Color.BLACK
 
-    # evaluation for the AI
-    def get_score(self, color):
-        score = 0
-        for i in range(8):
-            for j in range(8):
-                piece = self.get_piece(Square(i, j))
-                if piece and piece.color == color:
-                    score += piece_value[piece.abreviation.lower()]
-        return score
-
-    def get_static_simple_eval(self):
-        return self.get_score(Color.WHITE) - self.get_score(Color.BLACK)
-
-    def get_static_eval(self):
-        simple_eval = self.get_static_simple_eval()
-        if self.nb_pieces_on_board() >= 4:
-            return simple_eval
-
-        if simple_eval < -5:
-            loser = Color.WHITE
-        elif simple_eval > 5:
-            loser = Color.BLACK
-        else:
-            loser = Color.WHITE
-
-        c_distance = self.distance_center_king(loser)
-        k_distance = self.distance_between_kings()
-
-        if loser == Color.WHITE:
-            return simple_eval - c_distance + k_distance
-        elif loser == Color.BLACK:
-            return simple_eval + c_distance - k_distance
-        else:
-            return simple_eval
-
-    def distance_between_kings(self):
-        bk = self.king(Color.BLACK)
-        wk = self.king(Color.WHITE)
-        return sqrt((bk.i - wk.i) ** 2 + (bk.i - wk.i) ** 2)
-
-    def distance_center_king(self, color):
-        i, j = self.get_king_square(color)
-        return sqrt((i - 3) ** 2 + (j - 3) ** 2)
-
-    def nb_pieces_on_board(self):
-        return len([0 for i in range(8) for j in range(8) if self.board[i][j]])
-
     def __repr__(self):
         s = ""
         for i in range(8, 0, -1):
@@ -306,11 +260,6 @@ class Logic:
         s += "  a b c d e f g h"
         return s
 
-    def test_move(self, move):
-        pass
-
-
-piece_value = {"p": 1, "r": 5, "b": 3, "n": 3, "q": 9, "k": 0}
 
 if __name__ == "__main__":
     from constants import STARTINGPOSFEN

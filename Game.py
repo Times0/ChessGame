@@ -19,7 +19,7 @@ class Game:
         self.game_on = True
         self.window_on = True
 
-        self.players = {Color.WHITE: PlayerType.BOT,
+        self.players = {Color.WHITE: PlayerType.HUMAN,
                         Color.BLACK: PlayerType.BOT}
 
         self.bot_is_thinking = False
@@ -35,7 +35,7 @@ class Game:
     def run(self):
         clock = pygame.time.Clock()
         while self.window_on:
-            clock.tick(15)
+            clock.tick(60)
             self.events()
             self.bot_events()
             self.draw()

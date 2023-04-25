@@ -2,6 +2,7 @@ import time
 from random import choice
 
 from Logic import Logic, Color, State, Move
+from Pieces import piece_value
 import enum
 import logging
 import coloredlogs
@@ -52,11 +53,11 @@ class Bot(Player):
         print(f"Temps de reflexion du bot : {end - start:.2f}s")
 
 
-def play_well(logic) -> tuple[float, Move]:
+def play_well(logic, randomize=True) -> tuple[float, Move]:
     color = logic.turn
     M = True if color == Color.WHITE else False
-    depth = 1
-    return minmax_alpha_beta_root(logic, depth, -1000, 1000, M)
+    depth = 2
+    return minmax_alpha_beta_root(logic, depth, -1000, 1000, M, randomize=randomize)
 
 
 def minmax_alpha_beta(logic, depth, alpha, beta, maximizing, force_continue: bool, debug=False) \
@@ -71,9 +72,9 @@ def minmax_alpha_beta(logic, depth, alpha, beta, maximizing, force_continue: boo
         return 0, None
 
     if depth <= 0 and not force_continue:
-        return logic.get_static_eval(), None
+        return eval_position(logic), None
     elif depth < -2:
-        return logic.get_static_eval(), None
+        return eval_position(logic), None
 
     else:
         best_move = None
@@ -119,7 +120,9 @@ def minmax_alpha_beta(logic, depth, alpha, beta, maximizing, force_continue: boo
             return min_evaluation, best_move
 
 
-def minmax_alpha_beta_root(logic, depth, alpha, beta, maximizing, num_threads=4, debug=False) -> tuple[float, Move]:
+def minmax_alpha_beta_root_multithread(logic, depth, alpha, beta, maximizing, num_threads=4, debug=False,
+                                       randomize=True) \
+        -> tuple[float, Move]:
     all_evals_move = []
     if maximizing:
         possible_moves = logic.ordered_legal_moves(Color.WHITE)
@@ -180,4 +183,88 @@ def minmax_alpha_beta_root(logic, depth, alpha, beta, maximizing, num_threads=4,
         logging.debug(f"{len(all_evals_move)}")
         logging.debug(f"{all_evals_move=}")
 
-    return choice(all_best_eval_moves)
+    if randomize:
+        return choice(all_best_eval_moves)
+    else:
+        return all_best_eval_moves[0]
+
+
+def minmax_alpha_beta_root(logic, depth, alpha, beta, maximizing, debug=False, randomize=True) -> tuple[float, Move]:
+    all_evals_move = []
+    if maximizing:
+        possible_moves = logic.ordered_legal_moves(Color.WHITE)
+    else:
+        possible_moves = logic.ordered_legal_moves(Color.BLACK)
+
+    if debug:
+        logging.debug(f"{len(possible_moves)}")
+
+    for move in possible_moves:
+        virtual = Logic(fen=logic.get_fen())
+        virtual.real_move(move)
+        force_continue = move.is_check or move.is_capture
+        new_depth = depth if force_continue else depth - 1
+        evaluation, _ = minmax_alpha_beta(virtual, new_depth, alpha, beta, not maximizing, force_continue)
+
+        if evaluation >= 1000 and maximizing:
+            all_evals_move.append((evaluation, move))
+            return evaluation, move
+        elif evaluation <= -1000 and not maximizing:
+            all_evals_move.append((evaluation, move))
+            return evaluation, move
+
+        all_evals_move.append((evaluation, move))
+
+    evals = [i[0] for i in all_evals_move]
+    if maximizing:
+        max_evaluation = max(evals)
+        all_best_eval_moves = [e for e in all_evals_move if e[0] == max_evaluation]
+    else:
+        min_evaluation = min(evals)
+        all_best_eval_moves = [e for e in all_evals_move if e[0] == min_evaluation]
+
+    if debug:
+        logging.debug(f"{len(all_evals_move)}")
+        logging.debug(f"{all_evals_move=}")
+
+    if randomize:
+        return choice(all_best_eval_moves)
+    else:
+        return all_best_eval_moves[0]
+
+
+def eval_material(logic: Logic) -> float:
+    white = 0
+    black = 0
+    for i in range(8):
+        for j in range(8):
+            piece = logic.board[i][j]
+            if piece is not None:
+                if piece.color == Color.WHITE:
+                    white += piece.value
+                else:
+                    black += piece.value
+    return white - black
+
+
+def eval_position(logic: Logic) -> float:
+    eval_sum = 0
+    for i in range(8):
+        for j in range(8):
+            piece = logic.board[i][j]
+            if piece is None:
+                continue
+
+            color = piece.color
+            if color == Color.WHITE:
+                eval_sum += piece_value[piece.abreviation]
+            else:
+                eval_sum -= piece_value[piece.abreviation]
+
+            if piece.abreviation != "P":
+                if piece.never_moved:
+                    if color == Color.WHITE:
+                        eval_sum += 0.5
+                    else:
+                        eval_sum -= 0.5
+    return eval_sum

@@ -1,11 +1,10 @@
 import unittest
 from Logic import Logic, Color
 from constants import *
-from Player import Bot, play_well
+from Player import play_well
 from Logic import State, Square, Move
 
 import logging
-import coloredlogs
 
 
 class TestMovement(unittest.TestCase):
@@ -114,6 +113,15 @@ class TestProblems(unittest.TestCase):
             self.assertEqual(logic.state, State.WHITEWINS if supposed_winner == Color.BLACK else State.BLACKWINS)
             logging.log(logging.INFO, f"Completed {i} out of {nb_lines}")
         file.close()
+
+
+class TestRealGame(unittest.TestCase):
+    def test_ten_moves_from_start(self):
+        logic = Logic(STARTINGPOSFEN)
+        for i in range(10):
+            e, move = play_well(logic, randomize=False)
+            logic.real_move(move)
+        self.assertEqual(logic.state, State.GAMEON)
 
 
 if __name__ == '__main__':
