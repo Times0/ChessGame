@@ -16,7 +16,7 @@ class Color(Enum):
 
 class Piece:
     def __init__(self, color, square: Square):
-        from Logic import Logic
+        from logic import Logic
         self.never_moved = True
         self.color: Color = color
         self.square: Square = square
@@ -33,7 +33,7 @@ class Piece:
         """ Returns the list of every almost legal move this piece has which means it does not care about checks,
         checks are handled in  legal_moves
          Format is (i, j, id) with id being 1 if it is a capture and ((2 if it is a check)) (else 0) """
-        from Logic import Logic
+        from logic import Logic
         returnlist = []
         if self.color != logic.turn:
             raise Exception(f"It is not this piece's turn, it is {logic.turn} turn\n"

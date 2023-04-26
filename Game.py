@@ -1,11 +1,9 @@
 import threading
-
-import Button
 from Board_ui import Board, get_x_y_w_h, pygame
-from Logic import Logic, Color, State, Square, Move
+from logic import Logic, Color, State, Square, Move
 from constants import *
 from tools.button import TextButton
-from Player import Human, Bot, PlayerType
+from player import Human, Bot, PlayerType
 
 
 class Game:
@@ -73,6 +71,7 @@ class Game:
                                 self.play(m)
                                 print("Move played : ", m)
                                 self.current_piece_legal_moves = []
+                                break
 
     def play(self, move):
         self.logic.real_move(move)

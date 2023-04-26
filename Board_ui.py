@@ -1,9 +1,9 @@
 import pygame
-import Logic
-from Logic import Color, Square
+import logic
+from logic import Color, Square
 from constants import *
 from typing import Tuple
-
+from logic import Logic
 from fonctions import isInbounds
 
 PADDING_WIDTH = 150

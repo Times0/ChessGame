@@ -19,5 +19,5 @@ def isInbounds(i, j):
 
 
 def other_color(color: Color):
-    from Pieces import Color
+    from pieces import Color
     return Color.WHITE if color == Color.BLACK else Color.BLACK

@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import ndarray, sqrt
-from Pieces import Square, Move, Color, piece_from_abreviation, other_color, Side, Piece, Pawn, Knight, Bishop, Rook, \
+from pieces import Square, Move, Color, piece_from_abreviation, other_color, Side, Piece, Pawn, Knight, Bishop, Rook, \
     Queen, King
 import enum
 
@@ -26,7 +26,8 @@ class Logic:
         self.half_move_clock = int()
         self.en_passant_square = str()
         self.load_fen(fen)
-
+        self.move_history = []
+        self.fen_history = []
         self.king_square = {Color.WHITE: self.get_king_square(Color.WHITE),
                             Color.BLACK: self.get_king_square(Color.BLACK)}
 
@@ -221,6 +222,8 @@ class Logic:
 
     def real_move(self, move: Move) -> None:
         """Called once the move is validated, updates the game state, switches the turn and increments the halfmove clock"""
+        self.move_history.append(move)
+        self.fen_history.append(self.fen)
         self.move(move)
         self.switch_turn()
 
@@ -262,8 +265,4 @@ class Logic:
 
 
 if __name__ == "__main__":
-    from constants import STARTINGPOSFEN
-
-    l = Logic(STARTINGPOSFEN)
-    l.real_move(Move(Square("e2"), Square("e4")))
-    l.real_move(Move(Square("f7"), Square("f5")))
+    pass

@@ -2,8 +2,8 @@ import os
 import time
 from random import choice
 
-from Logic import Logic, Color, State, Move, Square
-from Pieces import piece_value
+from logic import Logic, Color, State, Move, Square
+from pieces import piece_value
 import enum
 import logging
 import coloredlogs
@@ -59,7 +59,7 @@ class Bot(Player):
 def play_well(logic, randomize=True) -> tuple[float, Move]:
     # Try to find a move in the opening book
     directory = os.path.dirname(__file__)
-    with chess.polyglot.open_reader(os.path.join(directory, "opening_books","Human.bin")) as reader:
+    with chess.polyglot.open_reader(os.path.join(directory, "opening_books", "performance.bin")) as reader:
         good_moves = []
         board = chess.Board(logic.get_fen())
         for move_entry in reader.find_all(board):
@@ -279,7 +279,7 @@ def eval_position(logic: Logic) -> float:
                 eval_sum -= piece_value[piece.abreviation]
 
             if piece.abreviation != "P":
-                if piece.never_moved:
+                if piece.never_moved and piece.abreviation != "K":
                     if color == Color.WHITE:
                         eval_sum += 0.2
                     else:

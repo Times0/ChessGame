@@ -11,6 +11,6 @@ if __name__ == "__main__":
 
 """
 TODO: make board object less heavy, maybe piece functions outside object.
-make a better evaluation function
 reduce the number of moves for minmax
+allow promotion
 """

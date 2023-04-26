@@ -1,5 +1,5 @@
 import os
-import Logic
+import logic
 from constants import STARTINGPOSFEN
 from square import Square, Move
 

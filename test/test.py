@@ -1,8 +1,8 @@
 import unittest
-from Logic import Logic, Color
+from logic import Logic, Color
 from constants import *
-from Player import play_well
-from Logic import State, Square, Move
+from player import play_well
+from logic import State, Square, Move
 
 import logging
 
