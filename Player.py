@@ -1,12 +1,15 @@
+import os
 import time
 from random import choice
 
-from Logic import Logic, Color, State, Move
+from Logic import Logic, Color, State, Move, Square
 from Pieces import piece_value
 import enum
 import logging
 import coloredlogs
 import threading
+
+import chess.polyglot
 
 # configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -54,6 +57,20 @@ class Bot(Player):
 
 
 def play_well(logic, randomize=True) -> tuple[float, Move]:
+    # Try to find a move in the opening book
+    directory = os.path.dirname(__file__)
+    with chess.polyglot.open_reader(os.path.join(directory, "opening_books","Human.bin")) as reader:
+        good_moves = []
+        board = chess.Board(logic.get_fen())
+        for move_entry in reader.find_all(board):
+            good_moves.append(move_entry.move)
+        if len(good_moves) > 0:
+            chosen_move = choice(good_moves)
+            chosen_move = chosen_move.__str__()
+            print(f"Opening book move found : {chosen_move}")
+            origin, destination = chosen_move[0:2], chosen_move[2:4]
+            return 0, Move(Square(origin), Square(destination))
+
     color = logic.turn
     M = True if color == Color.WHITE else False
     depth = 2
@@ -264,7 +281,27 @@ def eval_position(logic: Logic) -> float:
             if piece.abreviation != "P":
                 if piece.never_moved:
                     if color == Color.WHITE:
-                        eval_sum += 0.5
+                        eval_sum += 0.2
                     else:
-                        eval_sum -= 0.5
+                        eval_sum -= 0.2
     return eval_sum
+
+
+if __name__ == "__main__":
+    import chess
+
+    board = chess.Board()
+    board.push_san("e4")
+    board.push_san("e5")
+    board.push_san("Nf3")
+    board.push_san("Nc6")
+    board.push_san("Bc4")
+    board.push_san("Nf6")
+    board.push_san("Ng5")
+    board.push_san("Bc5")
+    board.push_san("Nxf7")
+
+    with chess.polyglot.open_reader("opening_books/Human.bin") as reader:
+        for entry in reader.find_all(board):
+            print(entry.move, entry.weight, entry.learn)
+            print(type(entry.move))
