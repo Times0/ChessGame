@@ -1,12 +1,9 @@
-import cProfile
-import multiprocessing
-import pstats
-
-import Button
-import bot
-from Board import *
-from Logic import Logic
-from fonctions import *
+import threading
+from board_ui import Board, get_x_y_w_h, pygame
+from logic import Logic, Color, State, Square, Move
+from constants import *
+from tools.button import TextButton
+from player import Human, Bot, PlayerType
 
 
 class Game:
@@ -15,175 +12,139 @@ class Game:
         self.logic = Logic(fen=fen)
         self.board = Board(BOARDSIZE)
         self.board.update(self.logic)
-        self.players = {"white": "human", "black": "human"}  # MODIFY HERE
-        botw = bot.Edouard("white")
-        botb = bot.Edouard("black")
-        self.bots = {"white": botw, "black": botb}
-        self.playertextlabel = {"white": f'White : {self.players["white"]}',
-                                "black": f'Black : {self.players["black"]}'}
 
-        self.buttons = [Button.Button(BLACK, GREY, WIDTH * 0.95, 15, 40, 40, pygame.quit, "X"),
-                        Button.Button(BLACK, BLACK, 15, MIDH, 150, 40, lambda: self.swap("white"),
-                                      self.playertextlabel['white'], textcolor=WHITE),
-                        Button.Button(BLACK, BLACK, 15, MIDH + 50, 150, 40, lambda: self.swap("black"),
-                                      self.playertextlabel['black'], textcolor=WHITE),
-                        Button.Button(BLACK, GREY, 15, HEIGHT * 0.9, 120, 40, self.restart, "Restart")
+        self.current_piece_legal_moves = []
+        self.game_on = True
+        self.window_on = True
 
-                        ]
+        self.players = {Color.WHITE: PlayerType.HUMAN,
+                        Color.BLACK: PlayerType.BOT}
 
-        # multiprocessing
-        manager = multiprocessing.Manager()
-        self.the_list = manager.list()
-        self.the_list.append(None)
-        self.bot_process = multiprocessing.Process(target=pygame.quit)
+        self.bot_is_thinking = False
+        self.returnlist = [None]
+        self.thread = None
 
-        # bot
-        self.hasToThink = True
+        # Buttons
+        self.buttons = []
+        self.btn_new_game = TextButton("New Game", 10, 50, pygame.font.SysFont("Arial", 32), WHITE)
+        self.btn_flip_board = TextButton("Flip Board", 10, 100, pygame.font.SysFont("Arial", 32), WHITE)
+        self.buttons.extend((self.btn_new_game, self.btn_flip_board))
 
     def run(self):
-        game_on = True
-        win_running = True
-        _move_info = False
         clock = pygame.time.Clock()
-
-        while win_running:
+        while self.window_on:
             clock.tick(60)
-            self.win.fill(BG_COLOR)
-            # gestion des évènements
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:  # si on appuie sur la croix
-                    game_on = False
-                # buttons
+            self.events()
+            self.bot_events()
+            self.draw()
+
+    def events(self):
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                self.window_on = False
+
+            self.check_buttons(events)
+            if not self.game_on:
+                continue
+            turn = self.logic.turn
+            if self.players[turn] == PlayerType.HUMAN:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    for button in self.buttons:
-                        if button.isMouseon(event.pos):
-                            button.onclick()
-                if event.type == pygame.MOUSEMOTION:
-                    for button in self.buttons:
-                        if button.isMouseon(event.pos):
-                            button.hover()
-                        else:
-                            button.default()
+                    pos = pygame.mouse.get_pos()
+                    if self.board.clicked(pos):
+                        if self.logic.turn != self.logic.get_piece(Square(*self.board.clicked_piece_coord)).color:
+                            continue
+                        self.current_piece_legal_moves = self.logic.get_legal_moves_piece(
+                            Square(*self.board.clicked_piece_coord))
 
-                if "human" in self.players.values():
-                    # si on clique sur l'echequier
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and \
-                            isInrectangle(event.pos, BOARDTOPLEFTPOS, BOARDSIZE, BOARDSIZE):
+                if self.board.dragging:
+                    if event.type == pygame.MOUSEMOTION:
+                        pos = pygame.mouse.get_pos()
+                        self.board.drag(pos)
 
-                        previous_coord = self.board.clicked_piece_coord
+                    if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                        pos = pygame.mouse.get_pos()
+                        dest_coord = self.board.drop(pos)
+                        move = Move(Square(*self.board.clicked_piece_coord), Square(*dest_coord))
+                        for m in self.current_piece_legal_moves:
+                            if m == move:
+                                self.play(m)
+                                print("Move played : ", m)
+                                self.current_piece_legal_moves = []
+                                break
 
-                        if previous_coord:
-                            move = *previous_coord, *self.board.coord_from_pos(*event.pos)
-                        legal_moves = self.logic.legal_moves()
-                        legal_moves_reduced = [(e[0], e[1], e[2], e[3]) for e in legal_moves]
+    def play(self, move):
+        self.logic.real_move(move)
+        self.board.update(self.logic)
+        self.check_end()
 
-                        # si on clique sur une case qui est un legal move, on effectue le move
-                        if self.board.legal_moves_to_output and move in legal_moves_reduced:
-                            i = legal_moves_reduced.index(move)
-                            _move_info = True
-                            actual_move = legal_moves[i]
-                            self.board.legal_moves_to_output = []
-                            self.board.clicked_piece_coord = None
-                        # si on clique sur une piece
-                        elif self.board.isNotempty(*self.board.coord_from_pos(*event.pos)):
-                            self.board.set_to_gone(*event.pos)
-                            self.board.state = "dragging"
-                            i, j = self.board.coord_from_pos(*event.pos)
-                            moves = self.logic.board[i][j].legal_moves(self.logic)
-                            self.board.legal_moves_to_output = moves
+    def bot_events(self):
+        if not self.game_on:
+            return
+        turn = self.logic.turn
+        if self.players[turn] == PlayerType.BOT:
+            if not self.bot_is_thinking:
+                self.bot_is_thinking = True
+                # Start the thinking thread
+                p = Bot()
+                self.thread = threading.Thread(target=p.play, args=(self.logic, self.returnlist))
+                self.thread.start()
+            else:
+                # Check if the move was found
+                if self.returnlist[0]:
+                    eval_and_move = self.returnlist[0]
+                    self.bot_is_thinking = False
+                    e, move = eval_and_move
+                    print(f"Eval found : {e}")
+                    self.play(move)
+                    self.returnlist = [None]
 
-                        # si on clique sur une case vide
-                        else:
-                            self.board.legal_moves_to_output = []
-                        # si on lache la piece
+    def check_buttons(self, events):
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                pos = pygame.mouse.get_pos()
+                if self.btn_new_game.tick():
+                    self.bot_is_thinking = False
+                    self.logic = Logic(STARTINGPOSFEN)
+                    self.board.update(self.logic)
+                    self.game_on = True
+                    self.current_piece_legal_moves = []
+                if self.btn_flip_board.tick():
+                    self.board.flip_board()
 
-                    # si on lache le clique et qu'on draggait
-                    elif event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.board.state == "dragging":
-                        legal_moves = self.logic.legal_moves()
-                        legal_moves_reduced = [(e[0], e[1], e[2], e[3]) for e in legal_moves]
-                        previous_coord = self.board.clicked_piece_coord
-                        if previous_coord:
-                            move = *previous_coord, *self.board.coord_from_pos(*event.pos)
+    def check_end(self):
+        if self.logic.state != State.GAMEON:
+            print(self.logic.state)
+            self.game_on = False
 
-                        # on effectue le move
-                        if move in legal_moves_reduced:
-                            i = legal_moves_reduced.index(move)
-                            _move_info = True
-                            actual_move = legal_moves[i]
-                            self.board.set_to_not_gone()
-                            self.board.legal_moves_to_output = []
-                        else:
-                            self.board.set_to_not_gone()
-                        self.board.state = "idle"
-                    # si on bouge la souris avec une pièce en main
-                    elif self.board.state == "dragging" and event.type == pygame.MOUSEMOTION:
-                        self.board.dragged_piece_pos = event.pos
-
-            if game_on:
-                if self.players[self.logic.turn] == "human":
-                    if _move_info:
-                        self.logic.real_move(actual_move)
-                        self.board.update(self.logic)
-                        self.board.attacked_cases = self.logic.cases_attacked_by('white')
-                        if self.logic.state != "game_on":
-                            game_on = False  # on arrete la boucle du jeu
-
-                elif self.players[self.logic.turn] == "bot":
-                    if self.hasToThink:
-                        print("\nStarted thinking")
-
-                        # FIND WHAT TAKES TIME
-                        # with cProfile.Profile() as pr:
-                        #     self.bots[self.logic.turn].play(self.logic, self.the_list)
-                        #     stats = pstats.Stats(pr)
-                        #     stats.sort_stats(pstats.SortKey.TIME)
-                        #     stats.print_stats()
-
-                        self.bot_process = multiprocessing.Process(target=self.bots[self.logic.turn].play,
-                                                                   args=(self.logic, self.the_list))
-                        self.bot_process.start()
-
-                        self.hasToThink = False
-                    if self.the_list[0]:
-                        print(f"Found the move {self.the_list[0]}")
-                        genius_move = self.the_list[0]
-                        self.the_list[0] = None
-                        self.hasToThink = True
-                        move = genius_move[1]
-                        self.logic.real_move(move)
-                        # self.logic.update_game_state(self.logic.turn)
-                        self.board.update(self.logic)
-                        if self.logic.state != "game_on":
-                            game_on = False  # on arrete la boucle du jeu
-            _move_info = False
-            actual_move = None
-
-            self.draw_everything()
-            pygame.display.flip()  # update l'affichage
-        pygame.quit()
-
-    def draw_everything(self):
-        self.board.draw(self.win, *BOARDTOPLEFTPOS)
+    def draw(self):
+        self.win.fill(BLACK)
+        self.board.draw(self.win, self.current_piece_legal_moves, *get_x_y_w_h())
         for button in self.buttons:
             button.draw(self.win)
-        self.draw_labels()
+        pygame.display.flip()
 
-    def draw_labels(self):
-        font = pygame.font.SysFont("monospace", 25)
-        label_state = font.render(f"Game state : {self.logic.state}", True, WHITE)
-        label_turn = font.render(f"Turn : {self.logic.turn}", True, WHITE)
-        self.win.blit(label_state, (15, HEIGHT * 0.1))
-        self.win.blit(label_turn, (15, HEIGHT * 0.1 + HEIGHT // 15))
+    def select(self, pos):
+        self.board.select(pos)
 
-    def restart(self):
-        try:
-            self.bot_process.terminate()
-        except:
-            pass
 
-        self.__init__(self.win, STARTINGPOSFEN)
-
-    def swap(self, color):
-        yes = "human" if self.players[color] == "bot" else "bot"
-        self.players[color] = yes
-        self.buttons[1 if color == "white" else 2].text = f"{color} : {yes}"
+"""
+def check_server(self):
+        if self.last_retrieved_fen != self.logic.get_fen():
+            print("Updating board to fit new fen")
+            self.logic.load_fen(self.last_retrieved_fen)
+            self.board.update(self.logic)
+    
+    def select(self, pos):
+        self.board.select(pos)
+    
+    def listen_server(self):
+        while True:
+            data = self.socket.recv(1024)
+            if data.startswith(b"fen:"):
+                data = data[4:]
+                print(f"Recieved fen: {data.decode()}")
+                self.last_retrieved_fen = data.decode()
+            else:
+                print(f"Received {data!r}")
+"""
