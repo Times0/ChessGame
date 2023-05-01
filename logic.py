@@ -223,7 +223,7 @@ class Logic:
     def real_move(self, move: Move) -> None:
         """Called once the move is validated, updates the game state, switches the turn and increments the halfmove clock"""
         self.move_history.append(move)
-        self.fen_history.append(self.fen)
+        self.fen_history.append(self.get_fen())
         self.move(move)
         self.switch_turn()
 

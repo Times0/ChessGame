@@ -1,5 +1,5 @@
 import threading
-from Board_ui import Board, get_x_y_w_h, pygame
+from board_ui import Board, get_x_y_w_h, pygame
 from logic import Logic, Color, State, Square, Move
 from constants import *
 from tools.button import TextButton
@@ -126,3 +126,25 @@ class Game:
 
     def select(self, pos):
         self.board.select(pos)
+
+
+"""
+def check_server(self):
+        if self.last_retrieved_fen != self.logic.get_fen():
+            print("Updating board to fit new fen")
+            self.logic.load_fen(self.last_retrieved_fen)
+            self.board.update(self.logic)
+    
+    def select(self, pos):
+        self.board.select(pos)
+    
+    def listen_server(self):
+        while True:
+            data = self.socket.recv(1024)
+            if data.startswith(b"fen:"):
+                data = data[4:]
+                print(f"Recieved fen: {data.decode()}")
+                self.last_retrieved_fen = data.decode()
+            else:
+                print(f"Received {data!r}")
+"""

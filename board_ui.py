@@ -127,7 +127,9 @@ class Board:
                 jtab = j if not self.flipped else 7 - j
                 piece = self.get_piece_at(itab, jtab)
                 if piece == "gone":
-                    # self.show()
+                    abreviation = self.dragged_piece.abreviation
+                    if self.dragged_piece.color == Color.WHITE:
+                        abreviation = abreviation.upper()
                     image_p = globals()[f"{self.dragged_piece.abreviation}_image"]
                     image_p = pygame.transform.smoothscale(image_p, (int(case_size * 1.1), int(case_size * 1.1)))
                     win.blit(image_p,
@@ -139,7 +141,6 @@ class Board:
                     abreviation = dico[type]
                     if color == Color.WHITE:
                         abreviation = abreviation.upper()
-
                     image_p = globals()[f"{abreviation}_image"]
                     image_p = pygame.transform.smoothscale(image_p, (case_size, case_size))
                     win.blit(image_p, (x + j * case_size, y + i * case_size))
