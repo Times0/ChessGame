@@ -1,7 +1,7 @@
 import unittest
 from logic import Logic, Color
 from constants import *
-from player import play_well
+from ai import play_well
 from logic import State, Square, Move
 
 import logging
@@ -117,8 +117,10 @@ class TestProblems(unittest.TestCase):
 
 class TestRealGame(unittest.TestCase):
     def test_ten_moves_from_start(self):
+        """ used to benchmark, no randomization"""
         logic = Logic(STARTINGPOSFEN)
-        for i in range(10):
+        logic.real_move(Move(Square("h2"), Square("h4")))  # Unusual opening to avoid book
+        for _ in range(10):
             e, move = play_well(logic, randomize=False)
             logic.real_move(move)
         self.assertEqual(logic.state, State.GAMEON)

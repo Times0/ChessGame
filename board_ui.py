@@ -1,16 +1,20 @@
-import pygame
-import logic
-from logic import Color, Square
-from constants import *
 from typing import Tuple
-from logic import Logic
+
+import pygame
+
+from constants import *
 from fonctions import isInbounds
+from logic import Color, Square
+from logic import Logic
 
 PADDING_WIDTH = 150
-PADDING_HEIGHT = 10
+PADDING_HEIGHT = 75
 
 
 def get_x_y_w_h():
+    """
+    :return: Retourne x,y,w,h les coordonnées du plateau de jeu
+    """
     W, H = pygame.display.get_surface().get_size()
     m = min(W - 2 * PADDING_WIDTH, H - 2 * PADDING_HEIGHT)
     x = (W - m) // 2
@@ -30,9 +34,8 @@ def coord_from_pos(coord_x, coord_y) -> Tuple[int, int]:
 
 
 class Board:
-    def __init__(self, size):
-        self.size = size
-
+    def __init__(self):
+        self.clicked_piece_coord = None
         self.board_to_output = [[None for _ in range(8)] for _ in range(8)]
 
         self.dragged_piece = None
@@ -113,14 +116,13 @@ class Board:
         for i in range(8):
             for j in range(8):
                 if (i + j) % 2 == 0:
-                    color = CASECOLOR1
+                    color = DARK_SQUARE_COLOR
                 else:
-                    color = CASECOLOR2
+                    color = LIGHT_SQUARE_COLOR
                 pygame.draw.rect(win, color, (x + j * case_size, y + i * case_size, case_size, case_size))
 
     def draw_pieces(self, win, x, y, w, h):
         case_size = w // 8
-        board = self.board_to_output
         for i in range(8):
             itab = 7 - i if not self.flipped else i
             for j in range(8):
@@ -128,19 +130,18 @@ class Board:
                 piece = self.get_piece_at(itab, jtab)
                 if piece == "gone":
                     abreviation = self.dragged_piece.abreviation
-                    if self.dragged_piece.color == Color.WHITE:
-                        abreviation = abreviation.upper()
-                    image_p = globals()[f"{self.dragged_piece.abreviation}_image"]
+                    if self.dragged_piece.color == Color.BLACK:
+                        abreviation = abreviation.lower()
+                    image_p = globals()[f"{abreviation}_image"]
                     image_p = pygame.transform.smoothscale(image_p, (int(case_size * 1.1), int(case_size * 1.1)))
                     win.blit(image_p,
                              (self.dragged_piece_pos[0] - case_size // 2,
                               self.dragged_piece_pos[1] - case_size // 2))
                 elif piece is not None:
                     color = piece.color
-                    type = piece.__class__.__name__
-                    abreviation = dico[type]
-                    if color == Color.WHITE:
-                        abreviation = abreviation.upper()
+                    abreviation = piece.abreviation
+                    if color == Color.BLACK:
+                        abreviation = abreviation.lower()
                     image_p = globals()[f"{abreviation}_image"]
                     image_p = pygame.transform.smoothscale(image_p, (case_size, case_size))
                     win.blit(image_p, (x + j * case_size, y + i * case_size))
@@ -152,11 +153,5 @@ class Board:
             i, j = self.f(i, j)
             pygame.draw.circle(win, RED, (x + j * case_size + case_size // 2, y + i * case_size + case_size // 2), 5)
 
-
-dico = {"Pawn": "p",
-        "Rook": "r",
-        "Knight": "n",
-        "Bishop": "b",
-        "Queen": "q",
-        "King": "k"
-        }
+    def flip(self):
+        self.flipped = not self.flipped

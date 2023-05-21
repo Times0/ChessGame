@@ -1,15 +1,15 @@
+import enum
+import logging
 import os
+import threading
 import time
 from random import choice
 
+import chess.polyglot
+import coloredlogs
+
 from logic import Logic, Color, State, Move, Square
 from pieces import piece_value
-import enum
-import logging
-import coloredlogs
-import threading
-
-import chess.polyglot
 
 # configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -25,31 +25,16 @@ class PlayerType(enum.Enum):
     BOT = 1
 
 
-class Player:
-    def __init__(self):
-        pass
-
-
-class Human(Player):
-    def __init__(self):
-        super().__init__()
-
-    def play(self):
-        pass
-
-
 def play_random(logic, color: Color) -> (int, int, int, int):
     return choice(logic.legal_moves(color))
 
 
-class Bot(Player):
-    def __init__(self):
-        super().__init__()
-
+class Bot:
     @staticmethod
     def play(logic, return_list):
         """ Used with multiprocessing that is why we need a list"""
         print("Starting reflection..")
+        time.sleep(0.1)
         start = time.time()
         return_list[0] = play_well(logic)
         end = time.time()
@@ -59,13 +44,16 @@ class Bot(Player):
 def play_well(logic, randomize=True) -> tuple[float, Move]:
     # Try to find a move in the opening book
     directory = os.path.dirname(__file__)
-    with chess.polyglot.open_reader(os.path.join(directory, "opening_books", "performance.bin")) as reader:
+    with chess.polyglot.open_reader(os.path.join(directory, "opening_books", "performance.bin")) as r:
         good_moves = []
         board = chess.Board(logic.get_fen())
-        for move_entry in reader.find_all(board):
+        for move_entry in r.find_all(board):
             good_moves.append(move_entry.move)
         if len(good_moves) > 0:
-            chosen_move = choice(good_moves)
+            if randomize:
+                chosen_move = choice(good_moves)
+            else:
+                chosen_move = good_moves[0]
             chosen_move = chosen_move.__str__()
             print(f"Opening book move found : {chosen_move}")
             origin, destination = chosen_move[0:2], chosen_move[2:4]
@@ -74,11 +62,11 @@ def play_well(logic, randomize=True) -> tuple[float, Move]:
     color = logic.turn
     M = True if color == Color.WHITE else False
     depth = 2
-    return minmax_alpha_beta_root(logic, depth, -1000, 1000, M, randomize=randomize)
+    return minmax_alpha_beta_root_multithread(logic, depth, -1000, 1000, M, randomize=randomize, num_threads=10)
 
 
-def minmax_alpha_beta(logic, depth, alpha, beta, maximizing, force_continue: bool, debug=False) \
-        -> tuple[float, Move or None]:
+def minmax_alpha_beta(logic, depth, alpha, beta, maximizing, force_continue: bool,
+                      debug=False) -> tuple[float, Move or None]:
     if debug:
         print(f"Here is the board after the move : \n {logic} \n {logic.state=}\n {maximizing=} \n\n")
     if logic.state == State.WHITEWINS:
@@ -138,8 +126,7 @@ def minmax_alpha_beta(logic, depth, alpha, beta, maximizing, force_continue: boo
 
 
 def minmax_alpha_beta_root_multithread(logic, depth, alpha, beta, maximizing, num_threads=4, debug=False,
-                                       randomize=True) \
-        -> tuple[float, Move]:
+                                       randomize=True) -> tuple[float, Move]:
     all_evals_move = []
     if maximizing:
         possible_moves = logic.ordered_legal_moves(Color.WHITE)
@@ -288,8 +275,6 @@ def eval_position(logic: Logic) -> float:
 
 
 if __name__ == "__main__":
-    import chess
-
     board = chess.Board()
     board.push_san("e4")
     board.push_san("e5")

@@ -1,16 +1,25 @@
 import threading
+
+import PygameUIKit
+
+from ai import Bot, PlayerType
 from board_ui import Board, get_x_y_w_h, pygame
-from logic import Logic, Color, State, Square, Move
 from constants import *
-from tools.button import TextButton
-from player import Human, Bot, PlayerType
+from logic import Logic, Color, State, Square, Move
+
+img_flip_board = pygame.image.load("assets/flip.png")
+img_flip_board = pygame.transform.scale(img_flip_board, (35, 35))
+
+BG_COLOR = (49, 46, 43)
+BTN_COLOR = (114, 137, 218)
+TEXT_BUTTON_COLOR = (191, 193, 197)
 
 
 class Game:
     def __init__(self, win, fen):
         self.win = win
         self.logic = Logic(fen=fen)
-        self.board = Board(BOARDSIZE)
+        self.board = Board()
         self.board.update(self.logic)
 
         self.current_piece_legal_moves = []
@@ -25,10 +34,11 @@ class Game:
         self.thread = None
 
         # Buttons
-        self.buttons = []
-        self.btn_new_game = TextButton("New Game", 10, 50, pygame.font.SysFont("Arial", 32), WHITE)
-        self.btn_flip_board = TextButton("Flip Board", 10, 100, pygame.font.SysFont("Arial", 32), WHITE)
-        self.buttons.extend((self.btn_new_game, self.btn_flip_board))
+        font_btn = pygame.font.SysFont("None", 40)
+        self.btn_new_game = PygameUIKit.button.ButtonText(BTN_COLOR, self.new_game, "New Game",
+                                                          font_color=TEXT_BUTTON_COLOR, border_radius=5, font=font_btn)
+        self.btn_flip_board = PygameUIKit.button.ButtonPngIcon(img_flip_board, self.flip_board)
+        self.easy_objects = PygameUIKit.super_object.Group(self.btn_new_game, self.btn_flip_board)
 
     def run(self):
         clock = pygame.time.Clock()
@@ -40,11 +50,10 @@ class Game:
 
     def events(self):
         events = pygame.event.get()
+        self.easy_objects.handle_events(events)
         for event in events:
             if event.type == pygame.QUIT:
                 self.window_on = False
-
-            self.check_buttons(events)
             if not self.game_on:
                 continue
             turn = self.logic.turn
@@ -99,33 +108,33 @@ class Game:
                     self.play(move)
                     self.returnlist = [None]
 
-    def check_buttons(self, events):
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                pos = pygame.mouse.get_pos()
-                if self.btn_new_game.tick():
-                    self.bot_is_thinking = False
-                    self.logic = Logic(STARTINGPOSFEN)
-                    self.board.update(self.logic)
-                    self.game_on = True
-                    self.current_piece_legal_moves = []
-                if self.btn_flip_board.tick():
-                    self.board.flip_board()
-
     def check_end(self):
         if self.logic.state != State.GAMEON:
             print(self.logic.state)
             self.game_on = False
 
     def draw(self):
-        self.win.fill(BLACK)
-        self.board.draw(self.win, self.current_piece_legal_moves, *get_x_y_w_h())
-        for button in self.buttons:
-            button.draw(self.win)
+        x, y, w, h = get_x_y_w_h()
+        self.win.fill(BG_COLOR)
+        self.board.draw(self.win, self.current_piece_legal_moves, x, y, w, h)
+
+        W, H = self.win.get_size()
+        self.btn_new_game.draw(self.win, x // 2 - self.btn_new_game.rect.w // 2, H // 2 - self.btn_new_game.rect.h // 2)
+        self.btn_flip_board.draw(self.win, x + w - self.btn_flip_board.rect.w, y + h + 10)
         pygame.display.flip()
+
+    def new_game(self):
+        self.bot_is_thinking = False
+        self.logic = Logic(STARTINGPOSFEN)
+        self.board.update(self.logic)
+        self.game_on = True
+        self.current_piece_legal_moves = []
 
     def select(self, pos):
         self.board.select(pos)
+
+    def flip_board(self):
+        self.board.flip_board()
 
 
 """
