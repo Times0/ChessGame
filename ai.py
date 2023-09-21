@@ -8,7 +8,7 @@ from random import choice
 import chess.polyglot
 import coloredlogs
 
-from logic import Logic, Color, State, Move, Square
+from logic import Logic, PieceColor, State, Move, Square
 from pieces import piece_value
 
 # configure logging
@@ -25,7 +25,7 @@ class PlayerType(enum.Enum):
     BOT = 1
 
 
-def play_random(logic, color: Color) -> (int, int, int, int):
+def play_random(logic, color: PieceColor) -> (int, int, int, int):
     return choice(logic.legal_moves(color))
 
 
@@ -60,7 +60,7 @@ def play_well(logic, randomize=True) -> tuple[float, Move]:
             return 0, Move(Square(origin), Square(destination))
 
     color = logic.turn
-    M = True if color == Color.WHITE else False
+    M = True if color == PieceColor.WHITE else False
     depth = 2
     return minmax_alpha_beta_root_multithread(logic, depth, -1000, 1000, M, randomize=randomize, num_threads=10)
 
@@ -85,7 +85,7 @@ def minmax_alpha_beta(logic, depth, alpha, beta, maximizing, force_continue: boo
         best_move = None
         if maximizing:
             max_evaluation = -1000
-            possible_moves = logic.ordered_legal_moves(Color.WHITE)
+            possible_moves = logic.ordered_legal_moves(PieceColor.WHITE)
             for move in possible_moves:
                 virtual = Logic(fen=logic.get_fen())
                 f_continue = move.is_check
@@ -102,7 +102,7 @@ def minmax_alpha_beta(logic, depth, alpha, beta, maximizing, force_continue: boo
             return max_evaluation, best_move
         else:
             min_evaluation = 1000
-            possible_moves = logic.ordered_legal_moves(Color.BLACK)
+            possible_moves = logic.ordered_legal_moves(PieceColor.BLACK)
             if debug:
                 print(f"{possible_moves=}")
             for move in possible_moves:
@@ -129,9 +129,9 @@ def minmax_alpha_beta_root_multithread(logic, depth, alpha, beta, maximizing, nu
                                        randomize=True) -> tuple[float, Move]:
     all_evals_move = []
     if maximizing:
-        possible_moves = logic.ordered_legal_moves(Color.WHITE)
+        possible_moves = logic.ordered_legal_moves(PieceColor.WHITE)
     else:
-        possible_moves = logic.ordered_legal_moves(Color.BLACK)
+        possible_moves = logic.ordered_legal_moves(PieceColor.BLACK)
 
     if debug:
         logging.debug(f"{len(possible_moves)}")
@@ -196,9 +196,9 @@ def minmax_alpha_beta_root_multithread(logic, depth, alpha, beta, maximizing, nu
 def minmax_alpha_beta_root(logic, depth, alpha, beta, maximizing, debug=False, randomize=True) -> tuple[float, Move]:
     all_evals_move = []
     if maximizing:
-        possible_moves = logic.ordered_legal_moves(Color.WHITE)
+        possible_moves = logic.ordered_legal_moves(PieceColor.WHITE)
     else:
-        possible_moves = logic.ordered_legal_moves(Color.BLACK)
+        possible_moves = logic.ordered_legal_moves(PieceColor.BLACK)
 
     if debug:
         logging.debug(f"{len(possible_moves)}")
@@ -244,7 +244,7 @@ def eval_material(logic: Logic) -> float:
         for j in range(8):
             piece = logic.board[i][j]
             if piece is not None:
-                if piece.color == Color.WHITE:
+                if piece.color == PieceColor.WHITE:
                     white += piece.value
                 else:
                     black += piece.value
@@ -260,14 +260,14 @@ def eval_position(logic: Logic) -> float:
                 continue
 
             color = piece.color
-            if color == Color.WHITE:
+            if color == PieceColor.WHITE:
                 eval_sum += piece_value[piece.abreviation]
             else:
                 eval_sum -= piece_value[piece.abreviation]
 
             if piece.abreviation != "P":
                 if piece.never_moved and piece.abreviation != "K":
-                    if color == Color.WHITE:
+                    if color == PieceColor.WHITE:
                         eval_sum += 0.2
                     else:
                         eval_sum -= 0.2

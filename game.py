@@ -1,11 +1,12 @@
 import threading
 
-import PygameUIKit
+from PygameUIKit.button import ButtonText, ButtonPngIcon
+from PygameUIKit import Group
 
 from ai import Bot, PlayerType
 from board_ui import Board, get_x_y_w_h, pygame
 from constants import *
-from logic import Logic, Color, State, Square, Move
+from logic import Logic, PieceColor, State, Square, Move
 
 img_flip_board = pygame.image.load("assets/flip.png")
 img_flip_board = pygame.transform.scale(img_flip_board, (35, 35))
@@ -13,6 +14,8 @@ img_flip_board = pygame.transform.scale(img_flip_board, (35, 35))
 BG_COLOR = (49, 46, 43)
 BTN_COLOR = (114, 137, 218)
 TEXT_BUTTON_COLOR = (191, 193, 197)
+
+from pygame import Color
 
 
 class Game:
@@ -26,8 +29,8 @@ class Game:
         self.game_on = True
         self.window_on = True
 
-        self.players = {Color.WHITE: PlayerType.HUMAN,
-                        Color.BLACK: PlayerType.BOT}
+        self.players = {PieceColor.WHITE: PlayerType.HUMAN,
+                        PieceColor.BLACK: PlayerType.BOT}
 
         self.bot_is_thinking = False
         self.returnlist = [None]
@@ -35,10 +38,12 @@ class Game:
 
         # Buttons
         font_btn = pygame.font.SysFont("None", 40)
-        self.btn_new_game = PygameUIKit.button.ButtonText(BTN_COLOR, self.new_game, "New Game",
-                                                          font_color=TEXT_BUTTON_COLOR, border_radius=5, font=font_btn)
-        self.btn_flip_board = PygameUIKit.button.ButtonPngIcon(img_flip_board, self.flip_board)
-        self.easy_objects = PygameUIKit.super_object.Group(self.btn_new_game, self.btn_flip_board)
+        self.btn_new_game = ButtonText("New Game", self.new_game, BTN_COLOR,
+                                       font_color=Color("white"), border_radius=5, font=font_btn)
+        self.btn_flip_board = ButtonPngIcon(img_flip_board, self.flip_board)
+        self.btn_bot_playing = ButtonText("Your turn", lambda: 1, Color(50, 56, 68),
+                                          font_color=Color("white"), border_radius=5, font=font_btn)
+        self.easy_objects = Group(self.btn_new_game, self.btn_flip_board, self.btn_bot_playing)
 
     def run(self):
         clock = pygame.time.Clock()
@@ -50,8 +55,9 @@ class Game:
 
     def events(self):
         events = pygame.event.get()
-        self.easy_objects.handle_events(events)
         for event in events:
+            self.easy_objects.handle_event(event)
+
             if event.type == pygame.QUIT:
                 self.window_on = False
             if not self.game_on:
@@ -59,12 +65,14 @@ class Game:
             turn = self.logic.turn
             if self.players[turn] == PlayerType.HUMAN:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    pos = pygame.mouse.get_pos()
+                    pos = event.pos
                     if self.board.clicked(pos):
                         if self.logic.turn != self.logic.get_piece(Square(*self.board.clicked_piece_coord)).color:
                             continue
                         self.current_piece_legal_moves = self.logic.get_legal_moves_piece(
                             Square(*self.board.clicked_piece_coord))
+                    else:
+                        self.current_piece_legal_moves = []
 
                 if self.board.dragging:
                     if event.type == pygame.MOUSEMOTION:
@@ -72,15 +80,12 @@ class Game:
                         self.board.drag(pos)
 
                     if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-                        pos = pygame.mouse.get_pos()
+                        pos = event.pos
                         dest_coord = self.board.drop(pos)
                         move = Move(Square(*self.board.clicked_piece_coord), Square(*dest_coord))
-                        for m in self.current_piece_legal_moves:
-                            if m == move:
-                                self.play(m)
-                                print("Move played : ", m)
-                                self.current_piece_legal_moves = []
-                                break
+                        if move in self.current_piece_legal_moves:
+                            self.play(move)
+                        self.current_piece_legal_moves = []
 
     def play(self, move):
         self.logic.real_move(move)
@@ -110,8 +115,14 @@ class Game:
 
     def check_end(self):
         if self.logic.state != State.GAMEON:
-            print(self.logic.state)
             self.game_on = False
+            if self.logic.state == State.CHECKMATE:
+                color = self.logic.turn
+                self.btn_bot_playing.change_text(f"Checkmate, {color.value} wins!")
+            elif self.logic.state == State.STALEMATE:
+                self.btn_bot_playing.change_text("Stalemate!")
+            elif self.logic.state == State.DRAW:
+                self.btn_bot_playing.change_text("Draw!")
 
     def draw(self):
         x, y, w, h = get_x_y_w_h()
@@ -121,6 +132,14 @@ class Game:
         W, H = self.win.get_size()
         self.btn_new_game.draw(self.win, x // 2 - self.btn_new_game.rect.w // 2, H // 2 - self.btn_new_game.rect.h // 2)
         self.btn_flip_board.draw(self.win, x + w - self.btn_flip_board.rect.w, y + h + 10)
+
+        if self.thread and self.thread.is_alive():
+            self.btn_bot_playing.change_text("Bot is thinking...")
+        else:
+            self.btn_bot_playing.change_text("Your turn")
+        self.btn_bot_playing.draw(self.win, x // 2 - self.btn_bot_playing.rect.w // 2,
+                                  H // 2 - self.btn_bot_playing.rect.h // 2 - 200)
+
         pygame.display.flip()
 
     def new_game(self):

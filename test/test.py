@@ -1,5 +1,5 @@
 import unittest
-from logic import Logic, Color
+from logic import Logic, PieceColor
 from constants import *
 from ai import play_well
 from logic import State, Square, Move
@@ -17,7 +17,7 @@ class TestFen(unittest.TestCase):
     def test_load_fen(self):
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         logic = Logic(fen)
-        self.assertEqual(logic.turn, Color.WHITE)
+        self.assertEqual(logic.turn, PieceColor.WHITE)
         self.assertEqual(logic.castle_rights_bit, 0b1111)
 
     def test_get_fen(self):
@@ -46,7 +46,7 @@ class TestCastling(unittest.TestCase):
         logic = Logic(fen)
         self.assertEqual(logic.castle_rights_bit, 0b1111)
 
-        lm = logic.legal_moves(Color.WHITE)
+        lm = logic.legal_moves(PieceColor.WHITE)
         self.assertIn(Move(Square("e1"), Square("g1")), lm)
         self.assertNotIn(Move(Square("e1"), Square("c1")), lm)
         logic.real_move(Move(Square("e1"), Square("g1")))
@@ -56,7 +56,7 @@ class TestCastling(unittest.TestCase):
         fen = "rnbqk2r/ppppbppp/8/4p2n/2B1P1P1/5N2/PPPP1P1P/RNBQ1RK1 b kq - 0 5"
         logic = Logic(fen)
         self.assertEqual(logic.castle_rights_bit, 0b1100)
-        self.assertIn(Move(Square("e8"), Square("g8")), logic.legal_moves(Color.BLACK))
+        self.assertIn(Move(Square("e8"), Square("g8")), logic.legal_moves(PieceColor.BLACK))
 
         logic.real_move(Move(Square("f7"), Square("f5")))
         self.assertEqual(logic.castle_rights_bit, 0b1100)
@@ -64,7 +64,7 @@ class TestCastling(unittest.TestCase):
         logic.real_move(Move(Square("h2"), Square("h3")))
         self.assertEqual(logic.castle_rights_bit, 0b1100)
 
-        self.assertNotIn(Move(Square("e8"), Square("g8")), logic.legal_moves(Color.BLACK))
+        self.assertNotIn(Move(Square("e8"), Square("g8")), logic.legal_moves(PieceColor.BLACK))
 
 
 class TestPromotion(unittest.TestCase):
@@ -88,7 +88,7 @@ class TestProblems(unittest.TestCase):
             e, move = play_well(logic)
             logic.real_move(move)
             supposed_winner = logic.turn
-            self.assertEqual(logic.state, State.WHITEWINS if supposed_winner == Color.BLACK else State.BLACKWINS)
+            self.assertEqual(logic.state, State.WHITEWINS if supposed_winner == PieceColor.BLACK else State.BLACKWINS)
         file.close()
 
     def test_problem_mate_in_2(self):
@@ -110,7 +110,7 @@ class TestProblems(unittest.TestCase):
             logic.real_move(move)
 
             supposed_winner = logic.turn
-            self.assertEqual(logic.state, State.WHITEWINS if supposed_winner == Color.BLACK else State.BLACKWINS)
+            self.assertEqual(logic.state, State.WHITEWINS if supposed_winner == PieceColor.BLACK else State.BLACKWINS)
             logging.log(logging.INFO, f"Completed {i} out of {nb_lines}")
         file.close()
 

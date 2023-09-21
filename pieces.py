@@ -9,16 +9,16 @@ class Logic:
     pass
 
 
-class Color(Enum):
-    WHITE = 0
-    BLACK = 1
+class PieceColor(Enum):
+    WHITE = "White"
+    BLACK = "Black"
 
 
 class Piece:
     def __init__(self, color, square: Square):
         from logic import Logic
         self.never_moved = True
-        self.color: Color = color
+        self.color: PieceColor = color
         self.square: Square = square
 
     def set_coord_weird(self, i, j) -> None:
@@ -61,7 +61,7 @@ class Piece:
 
     def get_fen(self) -> str:
         """Returns the fen notation of the piece"""
-        return self.abreviation if self.color == Color.WHITE else self.abreviation.lower()
+        return self.abreviation if self.color == PieceColor.WHITE else self.abreviation.lower()
 
     def __str__(self):
         s = f"{self.color} {self.abreviation} at {self.square}"
@@ -71,7 +71,7 @@ class Piece:
 class Pawn(Piece):
     def __init__(self, color, square: Square):
         super().__init__(color, square)
-        self.direction = 1 if self.color == Color.WHITE else -1
+        self.direction = 1 if self.color == PieceColor.WHITE else -1
         self.abreviation = "P"
 
     def almost_legal_moves(self, board: Logic) -> list[Move]:
@@ -84,7 +84,7 @@ class Pawn(Piece):
         i1 = i + dir  # case devant le pion (relativement)
         if isInbounds(i1, j) and not piece_at(Square(i1, j)):
             returnlist.append(Move(self.square, Square(i1, j)))
-            if self.square.i == (1 if self.color == Color.WHITE else 6):
+            if self.square.i == (1 if self.color == PieceColor.WHITE else 6):
                 i2 = i1 + dir  # deux cases devant le pion
                 if isInbounds(i2, j) and not piece_at(Square(i2, j)):
                     returnlist.append(Move(self.square, Square(i2, j)))
@@ -271,7 +271,7 @@ class King(Piece):
 
     def is_castling_still_available(self, logic: Logic, side: Side):
         color = self.color
-        if color == Color.WHITE:
+        if color == PieceColor.WHITE:
             if side == Side.KING:
                 return logic.castle_rights_bit & 0b0001
             else:
@@ -288,7 +288,8 @@ dico2 = {0: None, 1: Pawn, 2: Bishop, 3: Rook, 4: Knight, 5: Queen, 6: King}
 
 
 def piece_from_abreviation(abreviation, i, j):
-    return dico[abreviation.lower()](Color.BLACK if abreviation.lower() == abreviation else Color.WHITE, Square(i, j))
+    return dico[abreviation.lower()](PieceColor.BLACK if abreviation.lower() == abreviation else PieceColor.WHITE,
+                                     Square(i, j))
 
 
 piece_value = {"P": 1, "N": 3, "B": 3, "R": 5, "Q": 9, "K": 1000}

@@ -4,11 +4,12 @@ import pygame
 
 from constants import *
 from fonctions import isInbounds
-from logic import Color, Square
+from logic import PieceColor, Square
 from logic import Logic
 
 PADDING_WIDTH = 150
 PADDING_HEIGHT = 75
+from pygame import Color
 
 
 def get_x_y_w_h():
@@ -110,6 +111,7 @@ class Board:
         self.draw_board(win, x, y, w, h)
         self.draw_pieces(win, x, y, w, h)
         self.draw_dots(win, dots, x, y, w, h)
+        self.draw_moving_piece(win, x, y, w, h)
 
     def draw_board(self, win, x, y, w, h):
         case_size = w // 8
@@ -129,21 +131,14 @@ class Board:
                 jtab = j if not self.flipped else 7 - j
                 piece = self.get_piece_at(itab, jtab)
                 if piece == "gone":
-                    abreviation = self.dragged_piece.abreviation
-                    if self.dragged_piece.color == Color.BLACK:
-                        abreviation = abreviation.lower()
-                    image_p = globals()[f"{abreviation}_image"]
-                    image_p = pygame.transform.smoothscale(image_p, (int(case_size * 1.1), int(case_size * 1.1)))
-                    win.blit(image_p,
-                             (self.dragged_piece_pos[0] - case_size // 2,
-                              self.dragged_piece_pos[1] - case_size // 2))
+                    pass
                 elif piece is not None:
                     color = piece.color
                     abreviation = piece.abreviation
-                    if color == Color.BLACK:
+                    if color == PieceColor.BLACK:
                         abreviation = abreviation.lower()
                     image_p = globals()[f"{abreviation}_image"]
-                    image_p = pygame.transform.smoothscale(image_p, (case_size, case_size))
+                    image_p = pygame.transform.scale(image_p, (case_size, case_size))
                     win.blit(image_p, (x + j * case_size, y + i * case_size))
 
     def draw_dots(self, win, moves, x, y, w, h):
@@ -151,7 +146,20 @@ class Board:
         for move in moves:
             i, j = move.destination.i, move.destination.j
             i, j = self.f(i, j)
-            pygame.draw.circle(win, RED, (x + j * case_size + case_size // 2, y + i * case_size + case_size // 2), 5)
+
+            x_d = x + j * case_size + case_size // 2
+            y_d = y + i * case_size + case_size // 2
+            pygame.draw.circle(win, Color("white"), (x_d, y_d), case_size // 8)
+            pygame.draw.circle(win, Color("black"), (x_d, y_d), case_size // 8, 1)
 
     def flip(self):
         self.flipped = not self.flipped
+
+    def draw_moving_piece(self, win, x, y, w, h):
+        if self.dragging:
+            case_size = w // 8
+            i, j = coord_from_pos(*self.dragged_piece_pos)
+            i, j = self.f(i, j)
+            image_p = globals()[f"{self.dragged_piece.abreviation}_image"]
+            image_p = pygame.transform.smoothscale(image_p, (case_size, case_size))
+            win.blit(image_p, (self.dragged_piece_pos[0] - case_size // 2, self.dragged_piece_pos[1] - case_size // 2))
