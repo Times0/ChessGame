@@ -64,7 +64,9 @@
 
 ## About The Project
 
-![img_1.png](images/img_1.png)
+![mat en 2 pour les noirs](images/img_1.png)
+(Trait aux noirs mate in two)
+
 This is the chess game implemented in python. Interface is made with pygame and <a href=""> PygameUIKit </a>
 
 I also built an AI that plays using the minimax algorithm with alpha-beta pruning.
