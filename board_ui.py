@@ -12,7 +12,7 @@ PADDING_HEIGHT = 75
 from pygame import Color
 
 
-def get_x_y_w_h():
+def     get_x_y_w_h():
     """
     :return: Retourne x,y,w,h les coordonnées du plateau de jeu
     """

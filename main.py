@@ -6,7 +6,7 @@ from game import Game
 if __name__ == "__main__":
     pygame.init()
     win = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
-    game = Game(win, STARTINGPOSFEN)
+    game = Game(win, fenmate2[-2])
     game.run()
     pygame.quit()
 

@@ -11,8 +11,9 @@ from logic import Logic, PieceColor, State, Square, Move
 img_flip_board = pygame.image.load("assets/flip.png")
 img_flip_board = pygame.transform.scale(img_flip_board, (35, 35))
 
-BG_COLOR = (49, 46, 43)
-BTN_COLOR = (114, 137, 218)
+BG_COLOR = (22, 21, 18)
+
+BTN_COLOR_NEWGAME = (114, 137, 218)
 TEXT_BUTTON_COLOR = (191, 193, 197)
 
 from pygame import Color
@@ -38,10 +39,10 @@ class Game:
 
         # Buttons
         font_btn = pygame.font.SysFont("None", 40)
-        self.btn_new_game = ButtonText("New Game", self.new_game, BTN_COLOR,
+        self.btn_new_game = ButtonText("New Game", self.new_game, BTN_COLOR_NEWGAME,
                                        font_color=Color("white"), border_radius=5, font=font_btn)
         self.btn_flip_board = ButtonPngIcon(img_flip_board, self.flip_board)
-        self.btn_bot_playing = ButtonText("Your turn", lambda: 1, Color(50, 56, 68),
+        self.btn_bot_playing = ButtonText("Your turn", lambda: 1, Color(38, 36, 33),
                                           font_color=Color("white"), border_radius=5, font=font_btn)
         self.easy_objects = Group(self.btn_new_game, self.btn_flip_board, self.btn_bot_playing)
 
@@ -154,25 +155,3 @@ class Game:
 
     def flip_board(self):
         self.board.flip_board()
-
-
-"""
-def check_server(self):
-        if self.last_retrieved_fen != self.logic.get_fen():
-            print("Updating board to fit new fen")
-            self.logic.load_fen(self.last_retrieved_fen)
-            self.board.update(self.logic)
-    
-    def select(self, pos):
-        self.board.select(pos)
-    
-    def listen_server(self):
-        while True:
-            data = self.socket.recv(1024)
-            if data.startswith(b"fen:"):
-                data = data[4:]
-                print(f"Recieved fen: {data.decode()}")
-                self.last_retrieved_fen = data.decode()
-            else:
-                print(f"Received {data!r}")
-"""
